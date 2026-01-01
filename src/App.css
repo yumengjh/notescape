@@ -1,7 +1,5 @@
 
 .dashboard {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
   background: #ffffff;
   color: #0f172a;
@@ -9,13 +7,19 @@
 
 .dashboard-shell {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  min-height: 100vh;
 }
 
 .dashboard-sidebar {
   display: flex;      /* 关键 */
   align-items: stretch;
+}
+
+.dashboard-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .dashboard-shell > .app-container {
@@ -24,7 +28,7 @@
 
 .dashboard-content {
   flex: 1;
-  padding: 24px 28px 32px;
+  padding: 0px 0px 28px 0px;
   overflow: auto;
 }
 
@@ -48,5 +52,17 @@
   font-size: 14px;
 }
 
+/* Quill editor tweaks */
+.ql-container.ql-snow {
+  border: none !important;
+}
+.ql-container.ql-snow .ql-editor {
+  border: none !important;
+  padding: 14px;
+}
 
+
+/* .toolbar-container{
+  
+} */
 

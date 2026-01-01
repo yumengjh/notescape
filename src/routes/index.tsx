@@ -3,6 +3,7 @@ import { lazy, type ReactNode } from "react";
 const MainPage = lazy(() => import("../component/Main/main"));
 const AboutPage = lazy(() => import("../pages/About"));
 const ToolPage = lazy(() => import("../pages/Tool"));
+const HistoryPage = lazy(() => import("../pages/History"));
 
 export type AppRoute = {
   key: string;
@@ -33,6 +34,13 @@ export const appRoutes: AppRoute[] = [
     path: "/tool",
     element: <ToolPage />,
     inSidebar: true,
+  },
+  {
+    key: "history",
+    label: "历史版本",
+    path: "/history",
+    element: <HistoryPage />,
+    inSidebar: false,
   },
 ];
 

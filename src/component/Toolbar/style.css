@@ -1,0 +1,163 @@
+@keyframes toolbar-focus {
+  from {
+    box-shadow: 0 0 0 0 rgba(31, 178, 106, 0.25);
+  }
+  to {
+    box-shadow: 0 0 0 6px rgba(31, 178, 106, 0);
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e7e7e7;
+  /* padding: 6px 8px; */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: #1f1f1f;
+  gap: 0;
+  overflow-x: auto;
+  padding: 3px 50px;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-right: 1px solid #e7e7e7;
+}
+
+.toolbar-group:last-of-type {
+  border-right: none;
+}
+
+.toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.toolbar-button:hover {
+  background: #f5f5f5;
+}
+
+.toolbar-button:active {
+  background: #e8e8e8;
+}
+
+.toolbar-button:focus-visible {
+  outline: none;
+  animation: toolbar-focus 0.4s ease;
+}
+
+.dropdown-button {
+  padding-right: 6px;
+}
+
+.toolbar-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.caret {
+  font-size: 10px;
+  color: #7a7a7a;
+  margin-left: 2px;
+}
+
+.add-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1fb46a;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  stroke: #2f2f2f;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.text-label {
+  font-size: 14px;
+  color: #1f1f1f;
+}
+
+/* .strong {
+  font-weight: 700;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.strike {
+  text-decoration: line-through;
+}
+
+.underline {
+  text-decoration: underline;
+} */
+
+
+
+.color-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.color-sample {
+  width: 16px;
+  height: 2px;
+  background: #e15241;
+  border-radius: 999px;
+}
+
+.color-block {
+  width: 16px;
+  height: 10px;
+  background: #ffe17d;
+  border-radius: 3px;
+  border: 1px solid #e1c456;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    padding: 6px;
+    border-radius: 6px;
+  }
+
+  .toolbar-group {
+    padding: 0 4px;
+  }
+
+  .toolbar-button {
+    min-width: 28px;
+    height: 30px;
+    padding: 0 8px;
+  }
+}

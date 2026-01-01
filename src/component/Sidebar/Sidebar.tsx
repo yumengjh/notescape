@@ -3,6 +3,8 @@ import { NavLink } from "react-router-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./style.css";
 
+import {Tooltip} from "antd";
+
 type SidebarItem = {
   key: string;
   label: string;
@@ -16,13 +18,13 @@ type SidebarProps = {
 
 export default function Sidebar({ items = [], children }: SidebarProps) {
   const sidebarRef = useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState<number>(200); // 当前宽度（用于 inline style）
+  const [width, setWidth] = useState<number>(350); // 当前宽度（用于 inline style）
   const [isResizing, setIsResizing] = useState(false); // 鼠标是否在拖拽
   const [isCollapsed, setIsCollapsed] = useState(false); // 视觉上的“折叠”（宽度为 0）
-  const defaultWidth = 200;
-  const MIN = 80;
-  const MAX = 400;
-  const HIDE_THRESHOLD = 100;
+  const defaultWidth = 350;
+  const MIN = 250;
+  const MAX = 450;
+  const HIDE_THRESHOLD = 0;
 
   // ----- 开始拖拽 -----
   const startResizing = () => {
@@ -148,17 +150,73 @@ export default function Sidebar({ items = [], children }: SidebarProps) {
           opacity: isCollapsed ? 0 : 1,
         }}
       >
-        <div className="nav-list">
-          {items.map((item) => (
-            <NavLink
-              key={item.key || item.path}
-              to={item.path}
-              className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-            >
-              <span className="nav-label">{item.label}</span>
+        <div className="sidebar-inner">
+          <div className="sidebar-top">
+            <div className="sidebar-brand">
+              <span className="brand-icon" aria-hidden="true">
+                Z
+              </span>
+              <span className="brand-text">个人知识库</span>
+            </div>
+            <div className="sidebar-workspace">
+              <span className="workspace-icon" aria-hidden="true">
+                D
+              </span>
+              <span className="workspace-name">Demo</span>
+              <span className="workspace-meta" aria-hidden="true">
+                🌏
+              </span>
+              <Tooltip title="更多操作" placement="right">
+              <button type="button" className="workspace-action" aria-label="更多">
+                ...
+              </button>
+              </Tooltip>
+            </div>
+            <div className="sidebar-search-row">
+              <div className="sidebar-search">
+                <span className="search-icon" aria-hidden="true">
+                  #
+                </span>
+                <input className="search-input" type="text" placeholder="搜索" aria-label="搜索" />
+                <span className="search-shortcut">Ctrl + J</span>
+              </div>
+              <Tooltip title="新建文档" placement="right">
+              <button type="button" className="search-add" aria-label="新建">
+                +
+              </button>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div className="sidebar-fixed">
+            {/* <NavLink to="/" className={({ isActive }) => `fixed-item ${isActive ? "active" : ""}`}>
+              <span className="fixed-icon home" aria-hidden="true" />
+              首页
             </NavLink>
-          ))}
-          {children}
+            <NavLink to="/tool" className={({ isActive }) => `fixed-item ${isActive ? "active" : ""}`}>
+              <span className="fixed-icon list" aria-hidden="true" />
+              工具
+            </NavLink> */}
+            <NavLink to="/history" className={({ isActive }) => `fixed-item ${isActive ? "active" : ""}`}>
+              <span className="fixed-icon list" aria-hidden="true" />
+              历史版本
+            </NavLink>
+          </div>
+
+          <div className="sidebar-scroll">
+            <div className="nav-list">
+              {items.map((item) => (
+                <NavLink
+                  key={item.key || item.path}
+                  to={item.path}
+                  className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+                >
+                  <span className="nav-label">{item.label}</span>
+                </NavLink>
+              ))}
+              {children}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -168,6 +226,7 @@ export default function Sidebar({ items = [], children }: SidebarProps) {
         onMouseDown={isCollapsed ? undefined : startResizing}
       >
         <div className="split"></div>
+        <Tooltip title={isCollapsed ? "展开侧边栏" : "折叠侧边栏"} placement="right">
         <button
           type="button"
           className="toggle-btn"
@@ -188,6 +247,7 @@ export default function Sidebar({ items = [], children }: SidebarProps) {
             <path d="M753.613 996.727l-484.233-485.222 485.222-484.233z" fill="currentColor" />
           </svg>
         </button>
+        </Tooltip>
       </div>
     </div>
   );
