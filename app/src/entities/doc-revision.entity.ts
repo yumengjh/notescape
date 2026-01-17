@@ -6,8 +6,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Document } from './document.entity';
-import { User } from './user.entity';
 
 @Entity('doc_revisions')
 @Index(['docId', 'docVer'])
@@ -19,9 +17,9 @@ export class DocRevision {
   @Column({ unique: true, length: 100 })
   revisionId: string;
 
-  @ManyToOne(() => Document, (document) => document.revisions)
+  @ManyToOne('Document', 'revisions')
   @JoinColumn({ name: 'doc_id', referencedColumnName: 'docId' })
-  document: Document;
+  document: any;
 
   @Column()
   docId: string;
@@ -32,9 +30,9 @@ export class DocRevision {
   @Column({ type: 'bigint' })
   createdAt: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne('User')
   @JoinColumn({ name: 'created_by', referencedColumnName: 'userId' })
-  createdByUser: User;
+  createdByUser: any;
 
   @Column()
   createdBy: string;

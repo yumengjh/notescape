@@ -6,24 +6,22 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Workspace } from './workspace.entity';
-import { User } from './user.entity';
 
 @Entity('workspace_members')
 export class WorkspaceMember {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.members)
+  @ManyToOne('Workspace', 'members')
   @JoinColumn({ name: 'workspace_id', referencedColumnName: 'workspaceId' })
-  workspace: Workspace;
+  workspace: any;
 
   @Column()
   workspaceId: string;
 
-  @ManyToOne(() => User, (user) => user.workspaceMembers)
+  @ManyToOne('User', 'workspaceMembers')
   @JoinColumn({ name: 'user_id', referencedColumnName: 'userId' })
-  user: User;
+  user: any;
 
   @Column()
   userId: string;

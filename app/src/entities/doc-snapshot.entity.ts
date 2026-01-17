@@ -6,7 +6,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Document } from './document.entity';
 
 @Entity('doc_snapshots')
 @Index(['docId', 'docVer'])
@@ -17,9 +16,9 @@ export class DocSnapshot {
   @Column({ unique: true, length: 150 })
   snapshotId: string;
 
-  @ManyToOne(() => Document)
+  @ManyToOne('Document')
   @JoinColumn({ name: 'doc_id', referencedColumnName: 'docId' })
-  document: Document;
+  document: any;
 
   @Column()
   docId: string;

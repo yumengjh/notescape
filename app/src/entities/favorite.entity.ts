@@ -7,8 +7,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Document } from './document.entity';
 
 @Entity('favorites')
 @Index(['userId', 'docId'], { unique: true })
@@ -16,16 +14,16 @@ export class Favorite {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne('User')
   @JoinColumn({ name: 'user_id', referencedColumnName: 'userId' })
-  user: User;
+  user: any;
 
   @Column()
   userId: string;
 
-  @ManyToOne(() => Document, (document) => document.favorites)
+  @ManyToOne('Document', 'favorites')
   @JoinColumn({ name: 'doc_id', referencedColumnName: 'docId' })
-  document: Document;
+  document: any;
 
   @Column()
   docId: string;

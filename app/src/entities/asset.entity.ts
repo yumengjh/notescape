@@ -7,8 +7,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Workspace } from './workspace.entity';
-import { User } from './user.entity';
 
 @Entity('assets')
 @Index(['workspaceId'])
@@ -19,16 +17,16 @@ export class Asset {
   @Column({ unique: true, length: 50 })
   assetId: string;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.assets)
+  @ManyToOne('Workspace', 'assets')
   @JoinColumn({ name: 'workspace_id', referencedColumnName: 'workspaceId' })
-  workspace: Workspace;
+  workspace: any;
 
   @Column()
   workspaceId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne('User')
   @JoinColumn({ name: 'uploaded_by', referencedColumnName: 'userId' })
-  uploadedByUser: User;
+  uploadedByUser: any;
 
   @Column()
   uploadedBy: string;

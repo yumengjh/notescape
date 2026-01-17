@@ -6,8 +6,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Document } from './document.entity';
-import { Block } from './block.entity';
 
 @Entity('block_versions')
 @Index(['blockId', 'ver'])
@@ -22,9 +20,9 @@ export class BlockVersion {
   @Column()
   docId: string;
 
-  @ManyToOne(() => Block, (block) => block.versions)
+  @ManyToOne('Block', 'versions')
   @JoinColumn({ name: 'block_id', referencedColumnName: 'blockId' })
-  block: Block;
+  block: any;
 
   @Column()
   blockId: string;

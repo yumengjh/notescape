@@ -9,11 +9,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Workspace } from './workspace.entity';
-import { Block } from './block.entity';
-import { DocRevision } from './doc-revision.entity';
-import { Favorite } from './favorite.entity';
-import { Comment } from './comment.entity';
 
 @Entity('documents')
 @Index(['workspaceId', 'status'])
@@ -25,9 +20,9 @@ export class Document {
   @Column({ unique: true, length: 50 })
   docId: string;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.documents)
+  @ManyToOne('Workspace', 'documents')
   @JoinColumn({ name: 'workspace_id', referencedColumnName: 'workspaceId' })
-  workspace: Workspace;
+  workspace: any;
 
   @Column()
   workspaceId: string;
@@ -90,15 +85,15 @@ export class Document {
   searchVector: any;
 
   // 关联
-  @OneToMany(() => Block, (block) => block.document)
-  blocks: Block[];
+  @OneToMany('Block', 'document')
+  blocks: any[];
 
-  @OneToMany(() => DocRevision, (revision) => revision.document)
-  revisions: DocRevision[];
+  @OneToMany('DocRevision', 'document')
+  revisions: any[];
 
-  @OneToMany(() => Favorite, (favorite) => favorite.document)
-  favorites: Favorite[];
+  @OneToMany('Favorite', 'document')
+  favorites: any[];
 
-  @OneToMany(() => Comment, (comment) => comment.document)
-  comments: Comment[];
+  @OneToMany('Comment', 'document')
+  comments: any[];
 }

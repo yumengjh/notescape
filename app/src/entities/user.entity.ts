@@ -8,8 +8,6 @@ import {
   ManyToMany,
   JoinTable,
 } from 'typeorm';
-import { Workspace } from './workspace.entity';
-import { WorkspaceMember } from './workspace-member.entity';
 
 @Entity('users')
 export class User {
@@ -53,9 +51,9 @@ export class User {
   settings: object;
 
   // 关联
-  @OneToMany(() => Workspace, (workspace) => workspace.owner)
-  ownedWorkspaces: Workspace[];
+  @OneToMany('Workspace', 'owner')
+  ownedWorkspaces: any[];
 
-  @OneToMany(() => WorkspaceMember, (member) => member.user)
-  workspaceMembers: WorkspaceMember[];
+  @OneToMany('WorkspaceMember', 'user')
+  workspaceMembers: any[];
 }

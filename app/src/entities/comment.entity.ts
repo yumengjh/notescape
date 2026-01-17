@@ -8,9 +8,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Document } from './document.entity';
-import { Block } from './block.entity';
-import { User } from './user.entity';
 
 @Entity('comments')
 @Index(['docId'])
@@ -22,23 +19,23 @@ export class Comment {
   @Column({ unique: true, length: 50 })
   commentId: string;
 
-  @ManyToOne(() => Document, (document) => document.comments)
+  @ManyToOne('Document', 'comments')
   @JoinColumn({ name: 'doc_id', referencedColumnName: 'docId' })
-  document: Document;
+  document: any;
 
   @Column()
   docId: string;
 
-  @ManyToOne(() => Block)
+  @ManyToOne('Block')
   @JoinColumn({ name: 'block_id', referencedColumnName: 'blockId' })
-  block: Block;
+  block: any;
 
   @Column({ nullable: true })
   blockId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne('User')
   @JoinColumn({ name: 'user_id', referencedColumnName: 'userId' })
-  user: User;
+  user: any;
 
   @Column()
   userId: string;
@@ -49,9 +46,9 @@ export class Comment {
   @Column({ type: 'text', array: true, default: [] })
   mentions: string[];
 
-  @ManyToOne(() => Comment)
+  @ManyToOne('Comment')
   @JoinColumn({ name: 'parent_comment_id', referencedColumnName: 'commentId' })
-  parentComment: Comment;
+  parentComment: any;
 
   @Column({ nullable: true })
   parentCommentId: string;

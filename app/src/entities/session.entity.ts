@@ -7,7 +7,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
 
 @Entity('sessions')
 @Index(['sessionId'])
@@ -20,9 +19,9 @@ export class Session {
   @Column({ unique: true, length: 100 })
   sessionId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne('User')
   @JoinColumn({ name: 'user_id', referencedColumnName: 'userId' })
-  user: User;
+  user: any;
 
   @Column()
   userId: string;

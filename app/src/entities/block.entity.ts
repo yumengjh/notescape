@@ -7,8 +7,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Document } from './document.entity';
-import { BlockVersion } from './block-version.entity';
 
 @Entity('blocks')
 @Index(['docId', 'isDeleted'])
@@ -19,9 +17,9 @@ export class Block {
   @Column({ unique: true, length: 50 })
   blockId: string;
 
-  @ManyToOne(() => Document, (document) => document.blocks)
+  @ManyToOne('Document', 'blocks')
   @JoinColumn({ name: 'doc_id', referencedColumnName: 'docId' })
-  document: Document;
+  document: any;
 
   @Column()
   docId: string;
@@ -54,6 +52,6 @@ export class Block {
   deletedBy: string;
 
   // 关联
-  @OneToMany(() => BlockVersion, (version) => version.block)
-  versions: BlockVersion[];
+  @OneToMany('BlockVersion', 'block')
+  versions: any[];
 }

@@ -8,12 +8,6 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Document } from './document.entity';
-import { WorkspaceMember } from './workspace-member.entity';
-import { Asset } from './asset.entity';
-import { Tag } from './tag.entity';
-import { Activity } from './activity.entity';
 
 @Entity('workspaces')
 export class Workspace {
@@ -32,9 +26,9 @@ export class Workspace {
   @Column({ length: 10, nullable: true })
   icon: string;
 
-  @ManyToOne(() => User, (user) => user.ownedWorkspaces)
+  @ManyToOne('User', 'ownedWorkspaces')
   @JoinColumn({ name: 'owner_id', referencedColumnName: 'userId' })
-  owner: User;
+  owner: any;
 
   @Column()
   ownerId: string;
@@ -52,18 +46,18 @@ export class Workspace {
   settings: object;
 
   // 关联
-  @OneToMany(() => Document, (document) => document.workspace)
-  documents: Document[];
+  @OneToMany('Document', 'workspace')
+  documents: any[];
 
-  @OneToMany(() => WorkspaceMember, (member) => member.workspace)
-  members: WorkspaceMember[];
+  @OneToMany('WorkspaceMember', 'workspace')
+  members: any[];
 
-  @OneToMany(() => Asset, (asset) => asset.workspace)
-  assets: Asset[];
+  @OneToMany('Asset', 'workspace')
+  assets: any[];
 
-  @OneToMany(() => Tag, (tag) => tag.workspace)
-  tags: Tag[];
+  @OneToMany('Tag', 'workspace')
+  tags: any[];
 
-  @OneToMany(() => Activity, (activity) => activity.workspace)
-  activities: Activity[];
+  @OneToMany('Activity', 'workspace')
+  activities: any[];
 }
