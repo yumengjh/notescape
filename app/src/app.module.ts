@@ -5,6 +5,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule as AppConfigModule } from './config/config.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { WorkspacesModule } from './modules/workspaces/workspaces.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { BlocksModule } from './modules/blocks/blocks.module';
 
 // 导入所有实体
 import { User } from './entities/user.entity';
@@ -67,6 +70,9 @@ import { Session } from './entities/session.entity';
 
     // 功能模块
     AuthModule,
+    WorkspacesModule,
+    DocumentsModule,
+    BlocksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

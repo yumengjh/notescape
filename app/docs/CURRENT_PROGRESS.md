@@ -5,13 +5,16 @@
 ## 📊 总体完成度
 
 ```
-已完成: ████░░░░░░░░░░░░░░░░ 20%
+已完成: ██████████░░░░░░░░░░ 50%
 ```
 
 - ✅ 基础架构：100%
 - ✅ 认证模块：100%
 - ✅ 数据库实体：100%
-- ❌ 业务模块：0%（工作空间、文档、块等）
+- ✅ 工作空间模块：100%
+- ✅ 文档模块：100%
+- ✅ 块模块：100%
+- ❌ 业务模块：60%（工作空间、文档、块已完成）
 
 ---
 
@@ -75,7 +78,7 @@
 
 **DTO (dto/)**
 - ✅ `response.dto.ts` - 统一响应格式
-- ⏳ `pagination.dto.ts` - 分页 DTO（待使用）
+- ✅ `pagination.dto.ts` - 分页 DTO（已使用）
 
 **工具类 (utils/)**
 - ✅ `hash.util.ts` - 密码加密/验证工具
@@ -121,88 +124,112 @@
 - ✅ 配置模块集成
 - ✅ 数据库模块集成
 - ✅ 认证模块集成
+- ✅ 工作空间模块集成
+- ✅ 文档模块集成
+- ✅ 块模块集成
 
 ---
 
 ## ❌ 未完成的功能
 
-### 1. 工作空间模块 (workspaces)
+### 1. 工作空间模块 (workspaces) ✅
 
-**计划路径：** `src/modules/workspaces/`
+**路径：** `src/modules/workspaces/`
 
-**待实现接口：**
-- ❌ `POST /api/v1/workspaces` - 创建工作空间
-- ❌ `GET /api/v1/workspaces` - 获取工作空间列表
-- ❌ `GET /api/v1/workspaces/:workspaceId` - 获取工作空间详情
-- ❌ `PATCH /api/v1/workspaces/:workspaceId` - 更新工作空间
-- ❌ `DELETE /api/v1/workspaces/:workspaceId` - 删除工作空间
-- ❌ `POST /api/v1/workspaces/:workspaceId/members` - 邀请成员
-- ❌ `GET /api/v1/workspaces/:workspaceId/members` - 获取成员列表
-- ❌ `PATCH /api/v1/workspaces/:workspaceId/members/:userId` - 更新成员角色
-- ❌ `DELETE /api/v1/workspaces/:workspaceId/members/:userId` - 移除成员
+**已实现的接口：**
+- ✅ `POST /api/v1/workspaces` - 创建工作空间
+- ✅ `GET /api/v1/workspaces` - 获取工作空间列表
+- ✅ `GET /api/v1/workspaces/:workspaceId` - 获取工作空间详情
+- ✅ `PATCH /api/v1/workspaces/:workspaceId` - 更新工作空间
+- ✅ `DELETE /api/v1/workspaces/:workspaceId` - 删除工作空间
+- ✅ `POST /api/v1/workspaces/:workspaceId/members` - 邀请成员
+- ✅ `GET /api/v1/workspaces/:workspaceId/members` - 获取成员列表
+- ✅ `PATCH /api/v1/workspaces/:workspaceId/members/:userId` - 更新成员角色
+- ✅ `DELETE /api/v1/workspaces/:workspaceId/members/:userId` - 移除成员
 
-**待创建文件：**
-- `workspaces.module.ts`
-- `workspaces.controller.ts`
-- `workspaces.service.ts`
-- `dto/create-workspace.dto.ts`
-- `dto/update-workspace.dto.ts`
-- `dto/invite-member.dto.ts`
-- `dto/update-member-role.dto.ts`
+**功能特性：**
+- 工作空间 CRUD 操作
+- 成员管理（邀请、更新角色、移除）
+- 权限控制（owner、admin、editor、viewer）
+- 分页支持
+- 工作空间状态管理（active、archived）
 
-### 2. 文档模块 (documents)
+**相关文件：**
+- `workspaces.module.ts` - 模块定义
+- `workspaces.controller.ts` - 控制器
+- `workspaces.service.ts` - 业务逻辑
+- `dto/create-workspace.dto.ts` - 创建 DTO
+- `dto/update-workspace.dto.ts` - 更新 DTO
+- `dto/invite-member.dto.ts` - 邀请成员 DTO
+- `dto/update-member-role.dto.ts` - 更新角色 DTO
 
-**计划路径：** `src/modules/documents/`
+### 5. 文档模块 (documents) ✅
 
-**待实现接口：**
-- ❌ `POST /api/v1/documents` - 创建文档
-- ❌ `GET /api/v1/documents` - 获取文档列表
-- ❌ `GET /api/v1/documents/:docId` - 获取文档详情
-- ❌ `GET /api/v1/documents/:docId/content` - 获取文档内容（渲染树）
-- ❌ `PATCH /api/v1/documents/:docId` - 更新文档元数据
-- ❌ `POST /api/v1/documents/:docId/publish` - 发布文档
-- ❌ `POST /api/v1/documents/:docId/move` - 移动文档
-- ❌ `DELETE /api/v1/documents/:docId` - 删除文档
-- ❌ `GET /api/v1/documents/search` - 搜索文档
+**路径：** `src/modules/documents/`
 
-**待创建文件：**
-- `documents.module.ts`
-- `documents.controller.ts`
-- `documents.service.ts`
-- `dto/create-document.dto.ts`
-- `dto/update-document.dto.ts`
-- `dto/move-document.dto.ts`
-- `dto/query-documents.dto.ts`
-- `dto/search-query.dto.ts`
+**已实现的接口：**
+- ✅ `POST /api/v1/documents` - 创建文档
+- ✅ `GET /api/v1/documents` - 获取文档列表
+- ✅ `GET /api/v1/documents/:docId` - 获取文档详情
+- ✅ `GET /api/v1/documents/:docId/content` - 获取文档内容（渲染树）
+- ✅ `PATCH /api/v1/documents/:docId` - 更新文档元数据
+- ✅ `POST /api/v1/documents/:docId/publish` - 发布文档
+- ✅ `POST /api/v1/documents/:docId/move` - 移动文档
+- ✅ `DELETE /api/v1/documents/:docId` - 删除文档
+- ✅ `GET /api/v1/documents/search` - 搜索文档
 
-**依赖：**
-- 需要先实现工作空间模块（文档依赖工作空间）
-- 需要实现文档引擎（DocumentEngine）用于处理块树结构
+**功能特性：**
+- 文档 CRUD 操作
+- 文档树结构管理（父子关系）
+- 文档版本控制（head、publishedHead）
+- 文档可见性控制（private、workspace、public）
+- 全文搜索（PostgreSQL tsvector）
+- 标签和分类管理
+- 文档状态管理（draft、normal、archived、deleted）
+- 自动创建根块和初始版本
+- 循环引用检测
 
-### 3. 块模块 (blocks)
+**相关文件：**
+- `documents.module.ts` - 模块定义
+- `documents.controller.ts` - 控制器
+- `documents.service.ts` - 业务逻辑
+- `dto/create-document.dto.ts` - 创建文档 DTO
+- `dto/update-document.dto.ts` - 更新文档 DTO
+- `dto/move-document.dto.ts` - 移动文档 DTO
+- `dto/query-documents.dto.ts` - 查询文档 DTO
+- `dto/search-query.dto.ts` - 搜索查询 DTO
 
-**计划路径：** `src/modules/blocks/`
+### 6. 块模块 (blocks) ✅
 
-**待实现接口：**
-- ❌ `POST /api/v1/blocks` - 创建块
-- ❌ `PATCH /api/v1/blocks/:blockId/content` - 更新块内容
-- ❌ `POST /api/v1/blocks/:blockId/move` - 移动块
-- ❌ `DELETE /api/v1/blocks/:blockId` - 删除块
-- ❌ `GET /api/v1/blocks/:blockId/versions` - 获取块版本历史
-- ❌ `POST /api/v1/blocks/batch` - 批量操作块
+**路径：** `src/modules/blocks/`
 
-**待创建文件：**
-- `blocks.module.ts`
-- `blocks.controller.ts`
-- `blocks.service.ts`
-- `dto/create-block.dto.ts`
-- `dto/update-block.dto.ts`
-- `dto/move-block.dto.ts`
-- `dto/batch-block.dto.ts`
+**已实现的接口：**
+- ✅ `POST /api/v1/blocks` - 创建块
+- ✅ `PATCH /api/v1/blocks/:blockId/content` - 更新块内容
+- ✅ `POST /api/v1/blocks/:blockId/move` - 移动块
+- ✅ `DELETE /api/v1/blocks/:blockId` - 删除块
+- ✅ `GET /api/v1/blocks/:blockId/versions` - 获取块版本历史
+- ✅ `POST /api/v1/blocks/batch` - 批量操作块
 
-**依赖：**
-- 需要先实现文档模块（块属于文档）
-- 需要使用 `sort-key.util.ts` 进行块排序
+**功能特性：**
+- 块 CRUD 操作
+- 块版本控制（每次更新创建新版本）
+- 块树结构管理（父子关系）
+- 块移动和排序
+- 软删除机制
+- 批量操作（创建、更新、删除、移动）
+- 循环引用检测
+- 内容哈希计算（避免重复版本）
+- 纯文本提取（用于搜索）
+
+**相关文件：**
+- `blocks.module.ts` - 模块定义
+- `blocks.controller.ts` - 控制器
+- `blocks.service.ts` - 业务逻辑
+- `dto/create-block.dto.ts` - 创建块 DTO
+- `dto/update-block.dto.ts` - 更新块 DTO
+- `dto/move-block.dto.ts` - 移动块 DTO
+- `dto/batch-block.dto.ts` - 批量操作 DTO
 
 ### 4. 版本控制模块
 
@@ -263,7 +290,10 @@ app/
 │   ├── config/              ✅ 配置模块
 │   ├── entities/            ✅ 数据库实体（14个）
 │   ├── modules/
-│   │   └── auth/            ✅ 认证模块
+│   │   ├── auth/            ✅ 认证模块
+│   │   ├── workspaces/      ✅ 工作空间模块
+│   │   ├── documents/       ✅ 文档模块
+│   │   └── blocks/          ✅ 块模块
 │   ├── app.module.ts        ✅ 主模块
 │   └── main.ts              ✅ 应用入口
 ├── docs/
@@ -298,9 +328,9 @@ app/
 ## 📝 下一步计划
 
 ### 优先级 P0（必须）
-1. **工作空间模块** - 文档功能的基础依赖
-2. **文档模块** - 核心业务功能
-3. **块模块** - 文档内容的基础单元
+1. ✅ **工作空间模块** - 文档功能的基础依赖（已完成）
+2. ✅ **文档模块** - 核心业务功能（已完成）
+3. ✅ **块模块** - 文档内容的基础单元（已完成）
 
 ### 优先级 P1（重要）
 4. **版本控制模块** - 文档历史管理
@@ -340,8 +370,9 @@ app/
 ## 🎯 里程碑
 
 - [x] 2026-01-17 - 完成基础架构和认证模块
-- [ ] 待定 - 完成工作空间模块
-- [ ] 待定 - 完成文档模块
+- [x] 2026-01-17 - 完成工作空间模块
+- [x] 2026-01-17 - 完成文档模块
+- [x] 2026-01-17 - 完成块模块
 - [ ] 待定 - 完成块模块
 - [ ] 待定 - 完成核心功能（P0）
 - [ ] 待定 - 完成增强功能（P1-P2）
