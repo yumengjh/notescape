@@ -13,8 +13,6 @@
   background: #ffffff;
   padding: 0;
   overflow: hidden;
-  /* border-right: 1px solid #f5f5f5; */
-
   transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
     padding 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 }
@@ -39,77 +37,97 @@
 .sidebar-top {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 12px 10px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 16px;
+  padding: 16px 12px;
 }
 
-.sidebar-brand {
+/* 面包屑导航 */
+.sidebar-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #1f1f1f;
-  font-size: 13px;
+  gap: 6px;
+  padding: 0;
 }
 
-.brand-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
+.breadcrumb-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
   background: #16a34a;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
+.breadcrumb-arrow {
+  color: #d1d5db;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.breadcrumb-text {
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* 工作区信息 */
 .sidebar-workspace {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: #f7f7f7;
+  padding: 0;
 }
 
 .workspace-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  background: #3b82f6;
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
+  color: #3b82f6;
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
 .workspace-name {
   font-weight: 600;
   color: #111827;
+  font-size: 14px;
+  flex: 1;
 }
 
-.workspace-meta {
+.workspace-globe {
   color: #9ca3af;
-  font-size: 12px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
-.workspace-action {
-  margin-left: auto;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
+.workspace-dropdown {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
   color: #6b7280;
-  cursor: pointer;
+  flex-shrink: 0;
 }
 
-.workspace-action:hover {
-  background: #ececec;
+.workspace-dropdown:hover {
+  background: transparent;
+  color: #111827;
+}
+
+.workspace-more {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.workspace-more:hover {
+  background: transparent;
+  color: #111827;
 }
 
 .sidebar-search-row {
@@ -118,52 +136,105 @@
   gap: 8px;
 }
 
-.sidebar-search {
+/* 搜索框包装器 */
+.sidebar-search-wrapper {
   flex: 1;
-  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border-radius: 8px;
+  padding: 6px 10px;
   background: #f7f7f7;
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.sidebar-search-wrapper:focus-within {
+  background: #ffffff;
 }
 
 .search-icon {
   color: #9ca3af;
-  font-size: 12px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
-.search-input {
+.sidebar-search-input {
   flex: 1;
   min-width: 0;
-  border: none;
+  padding: 0;
   background: transparent;
   font-size: 13px;
-  color: #111827;
-  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar-search-input:focus {
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar-search-input input {
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+}
+
+.sidebar-search-input input:focus {
+  border: none;
+  box-shadow: none;
 }
 
 .search-shortcut {
   color: #9ca3af;
   font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
-.search-add {
-  flex: 0 0 auto;
+.search-add-btn {
+  padding: 0;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #4b5563;
-  cursor: pointer;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 6px;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-.search-add:hover {
-  background: #f3f4f6;
+.search-add-btn:hover {
+  background: #f7f7f7 !important;
+  color: #111827;
+  border: none !important;
+  box-shadow: none !important;
 }
+
+.search-add-btn:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.search-add-btn.ant-btn {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.search-add-btn.ant-btn:hover {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.search-add-btn.ant-btn:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
 
 .sidebar-fixed {
   display: flex;
@@ -187,10 +258,20 @@
   color: #1f1f1f;
   cursor: pointer;
   text-decoration: none;
+  transition: all 0.2s;
+}
+
+.fixed-item .anticon {
+  font-size: 16px;
+  color: #6b7280;
 }
 
 .fixed-item:hover {
   background: #f5f5f5;
+}
+
+.fixed-item:hover .anticon {
+  color: #1f1f1f;
 }
 
 .fixed-item.active {
@@ -198,69 +279,382 @@
   font-weight: 600;
 }
 
+.fixed-item.active .anticon {
+  color: #3b82f6;
+}
+
+/* ========== 滚动区域 ========== */
 .sidebar-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 8px 12px;
+  overflow-x: hidden;
+  padding: 8px 0 12px 0;
 }
 
-/* 文档树 */
-.doc-tree {
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ========== 文档列表区域 ========== */
+.documents-section {
+  padding: 0 12px;
+  min-width: 0;
+}
+
+/* Sidebar 中的 documents-header - 使用更具体的选择器避免冲突 */
+.sidebar .documents-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 0;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.sidebar .documents-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar .documents-header > .ant-dropdown-trigger {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  width: auto !important;
+  min-width: 20px !important;
+}
+
+.new-doc-btn {
+  padding: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.new-doc-btn.ant-btn {
+  padding: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+.new-doc-btn:hover {
+  background: #f3f4f6 !important;
+  color: #1f1f1f !important;
+}
+
+.new-doc-btn.ant-btn:hover {
+  background: #f3f4f6 !important;
+  color: #1f1f1f !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.new-doc-btn:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.new-doc-btn.ant-btn:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.new-doc-btn.ant-btn:focus:hover {
+  background: #f3f4f6 !important;
+}
+
+.new-doc-input-wrapper {
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.new-doc-input-wrapper .ant-input {
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.new-doc-input-wrapper .ant-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.documents-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.doc-node {
-  width: 100%;
-}
-
-.doc-node-btn {
-  width: 100%;
+.document-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
+  gap: 8px;
+  padding: 6px 8px;
   border-radius: 6px;
-  border: none;
-  background: transparent;
   cursor: pointer;
-  font-size: 13px;
-  color: #262626;
-  text-align: left;
+  transition: background-color 0.15s ease;
+  position: relative;
 }
 
-.doc-node-btn:hover {
+.document-item:hover {
   background: #f5f5f5;
 }
 
-.doc-node-btn.active {
+.document-item.active {
   background: #e8f2ff;
-  color: #0f172a;
-  font-weight: 600;
 }
 
-.doc-node-arrow {
-  display: inline-block;
-  font-size: 10px;
-  color: #9ca3af;
+.document-item.active .document-title {
+  color: #3b82f6;
+  font-weight: 500;
 }
 
-.doc-node-dot {
-  display: inline-block;
-  width: 6px;
-  text-align: center;
-  font-size: 10px;
-  color: #d1d5db;
+.document-icon {
+  font-size: 16px;
+  color: #6b7280;
+  flex-shrink: 0;
 }
 
-.doc-node-title {
+.document-item.active .document-icon {
+  color: #3b82f6;
+}
+
+.document-title {
+  flex: 1;
+  font-size: 14px;
+  color: #1f1f1f;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.doc-node-children {
-  margin-top: 2px;
+.document-action-btn {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border: none;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.document-item:hover .document-action-btn,
+.document-item.active .document-action-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.document-action-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1f1f1f;
+}
+
+/* ========== 文档树 - 完全重新设计 ========== */
+.doc-tree.ant-tree {
+  background: transparent;
+  font-size: 14px;
+  color: #1f1f1f;
+  padding: 0;
+}
+
+/* 树节点 - 使用负边距让背景延伸到边缘 */
+.doc-tree .ant-tree-treenode {
+  margin: 1px 0;
+  padding: 0;
+  position: relative;
+  border-radius: 0;
+}
+
+/* 树节点行容器 - 包含缩进、切换按钮和内容 */
+.doc-tree .ant-tree-node-content-wrapper {
+  padding: 4px 0;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-radius: 6px;
+  background: transparent !important;
+  transition: background-color 0.15s ease;
+  position: relative;
+  width: 100%;
+}
+
+/* 使用伪元素创建全宽背景，延伸到滚动条之前 */
+.doc-tree .ant-tree-node-content-wrapper::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: transparent;
+  border-radius: 6px;
+  pointer-events: none;
+  transition: background-color 0.15s ease;
+  z-index: 0;
+}
+
+/* 悬浮状态 - 当前无样式，保留注释供将来使用 */
+
+/* 选中状态 */
+.doc-tree .ant-tree-node-selected .ant-tree-node-content-wrapper::before {
+  background: #ebebeb !important;
+}
+
+/* 列表容器 */
+.doc-tree .ant-tree-list-holder-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 标题容器 */
+.tree-node-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  min-height: 24px;
+  z-index: 1;
+  padding: 0 8px;
+}
+
+.tree-node-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1f1f1f;
+  font-size: 14px;
+  padding-right: 56px;
+}
+
+/* 操作按钮组 - 始终显示在最右边 */
+.tree-node-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 10;
+}
+
+/* hover 或选中时显示操作按钮 */
+.doc-tree .ant-tree-node-content-wrapper:hover .tree-node-actions,
+.doc-tree .ant-tree-node-selected .ant-tree-node-content-wrapper .tree-node-actions {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 操作按钮 - 原生 button，完全无边框 */
+.tree-node-action-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tree-node-action-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1f1f1f;
+}
+
+.tree-node-action-btn:focus,
+.tree-node-action-btn:active {
+  border: none;
+  box-shadow: none;
+  outline: none;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.tree-node-action-btn .anticon {
+  font-size: 14px;
+}
+
+/* 折叠按钮样式 */
+.doc-tree .ant-tree-switcher {
+  width: 20px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  transition: color 0.2s;
+  position: relative;
+  z-index: 1;
+}
+
+.doc-tree .ant-tree-switcher:hover {
+  color: #1f1f1f;
+}
+
+.doc-tree .ant-tree-switcher-icon {
+  font-size: 10px;
+}
+
+/* 调整缩进 */
+.doc-tree .ant-tree-indent-unit {
+  width: 20px;
 }
 
 /* ===== Resizer ===== */
@@ -273,6 +667,7 @@
   align-items: center;
   justify-content: center;
   user-select: none;
+  background-color: #ffffff;
 }
 
 .resizer:not(.collapsed) {
@@ -298,21 +693,16 @@
 .toggle-btn {
   position: relative;
   z-index: 1;
-
   width: 26px;
   height: 56px;
   border-radius: 999px;
-
   background: #ffffff;
   border: 1px solid #f5f5f5;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 0;
   cursor: pointer;
-
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
@@ -320,9 +710,9 @@
   background: #f5f5f5;
 }
 
-.toggle-btn:active {
+/* .toggle-btn:active {
   transform: translateY(1px);
-}
+} */
 
 .toggle-btn:focus-visible {
   outline: 2px solid rgba(0, 0, 0, 0.15);
@@ -337,4 +727,95 @@
 
 .icon.collapsed {
   transform: rotate(180deg);
+}
+
+/* 创建文档弹窗样式 */
+.create-doc-popover-overlay {
+  min-width: 400px;
+}
+
+.create-doc-popover {
+  padding: 4px 0;
+  min-width: 400px;
+}
+
+.doc-type-section {
+  margin-bottom: 24px;
+}
+
+.doc-type-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.doc-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-type-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #ffffff;
+}
+
+.doc-type-item:hover {
+  border-color: #3b82f6;
+  background: #f9fafb;
+}
+
+.doc-type-item.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.doc-type-icon {
+  font-size: 20px;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.doc-type-info {
+  flex: 1;
+}
+
+.doc-type-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.doc-type-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.doc-title-section {
+  margin-top: 24px;
+}
+
+.doc-title-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.doc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
 }

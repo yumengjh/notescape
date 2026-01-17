@@ -1,7 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
-import { Dropdown, Tooltip, message, Input, Modal, Space } from "antd";
+import { Dropdown, Tooltip, message, Input, Modal, Space, ColorPicker, Divider } from "antd";
 import type { Editor } from "@tiptap/react";
+import {
+  UndoOutlined,
+  RedoOutlined,
+  ClearOutlined,
+  EditOutlined,
+  BoldOutlined,
+  ItalicOutlined,
+  StrikethroughOutlined,
+  UnderlineOutlined,
+  AlignLeftOutlined,
+  AlignCenterOutlined,
+  AlignRightOutlined,
+  UnorderedListOutlined,
+  OrderedListOutlined,
+  CheckSquareOutlined,
+  LinkOutlined,
+  FileTextOutlined,
+  CodeOutlined,
+  DownOutlined,
+  BgColorsOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
 import { useDocumentEngineStore } from "../../editor/useDocumentEngineStore";
 import "./style.css";
 
@@ -9,7 +31,7 @@ type ToolbarItem = {
   id: string;
   label: string;
   content: ReactNode;
-  type?: "dropdown";
+  type?: "dropdown" | "color-picker";
 };
 
 const titleLevelItems = [
@@ -42,57 +64,56 @@ const fontSizeItems = [
   label: size,
 }));
 
-const toolbarGroups: ToolbarItem[][] = [
-  [
-    { id: "undo", label: "撤销", content: <UndoIcon /> },
-    { id: "redo", label: "重做", content: <RedoIcon /> },
-    { id: "clearFormat", label: "清除格式", content: <ClearFormatIcon /> },
-  ],
-  [{ id: "cursor", label: "光标", content: <CursorIcon /> }],
-  [
-    {
-      id: "text-mode",
-      label: "标题",
-      content: <span className="text-label">正文</span>,
-      type: "dropdown",
-    },
-    {
-      id: "font-size",
-      label: "字号 15px",
-      content: <span className="text-label">15px</span>,
-      type: "dropdown",
-    },
-  ],
-  [
-    { id: "bold", label: "加粗", content: <BoldIcon /> },
-    { id: "italic", label: "斜体", content: <ItalicIcon /> },
-    { id: "strike", label: "删除线", content: <StrikeIcon /> },
-    { id: "underline", label: "下划线", content: <UnderlineIcon /> },
-  ],
-  [
-    { id: "align-left", label: "左对齐", content: <AlignLeftIcon /> },
-    { id: "align-center", label: "居中", content: <AlignCenterIcon /> },
-    { id: "align-justify", label: "两端对齐", content: <AlignJustifyIcon /> },
-  ],
-  [
-    { id: "bullet-list", label: "无序列表", content: <BulletListIcon /> },
-    { id: "ordered-list", label: "有序列表", content: <NumberListIcon /> },
-    { id: "check-list", label: "待办列表", content: <CheckListIcon /> },
-  ],
-  [
-    { id: "blockquote", label: "引用", content: <QuoteIcon /> },
-    { id: "code-block", label: "代码块", content: <CodeIcon /> },
-    { id: "link", label: "链接", content: <LinkIcon /> },
-  ],
+// 有序列表编号方式选项（静态数据，不依赖组件）
+const orderedListTypeItems = [
+  { key: "decimal", label: "1. 2. 3.", description: "数字" },
+  { key: "lower-alpha", label: "a. b. c.", description: "小写字母" },
+  { key: "upper-alpha", label: "A. B. C.", description: "大写字母" },
+  { key: "lower-roman", label: "i. ii. iii.", description: "小写罗马数字" },
+  { key: "upper-roman", label: "I. II. III.", description: "大写罗马数字" },
+].map((item) => ({
+  key: item.key,
+  label: item.label,
+  description: item.description,
+}));
+
+// 默认颜色和实色网格
+const defaultColor = "#000000";
+const solidColors = [
+  // 灰色系列
+  ["#000000", "#434343", "#666666", "#999999", "#B7B7B7", "#CCCCCC", "#D9D9D9", "#EFEFEF", "#F3F3F3", "#FFFFFF"],
+  // 红色系列
+  ["#980000", "#FF0000", "#FF9900", "#FFFF00", "#00FF00", "#00FFFF", "#4A86E8", "#0000FF", "#9900FF", "#FF00FF"],
+  // 橙色系列
+  ["#E6B8AF", "#F4CCCC", "#FCE5CD", "#FFF2CC", "#D9EAD3", "#D0E0E3", "#C9DAF8", "#CFE2F3", "#D9D2E9", "#EAD1DC"],
+  // 黄色系列
+  ["#DD7E6B", "#EA9999", "#F9CB9C", "#FFE599", "#B6D7A8", "#A2C4C9", "#A4C2F4", "#9FC5E8", "#B4A7D6", "#D5A6BD"],
+  // 绿色系列
+  ["#CC4125", "#E06666", "#F6B26B", "#FFD966", "#93C47D", "#76A5AF", "#6D9EEB", "#6FA8DC", "#8E7CC3", "#C27BA0"],
+  // 蓝色系列
+  ["#A61C00", "#CC0000", "#E69138", "#F1C232", "#6AA84F", "#45818E", "#3C78D8", "#3D85C6", "#674EA7", "#A64D79"],
+];
+
+// 渐变色
+const gradientColors = [
+  { id: "gradient-1", colors: ["#4A86E8", "#9900FF"] },
+  { id: "gradient-2", colors: ["#9900FF", "#FF00FF"] },
+  { id: "gradient-3", colors: ["#FF9900", "#FF00FF"] },
+  { id: "gradient-4", colors: ["#FF9900", "#FFFF00"] },
 ];
 
 export default function Toolbar() {
   const { editor } = useDocumentEngineStore();
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkValue, setLinkValue] = useState("");
+  const [selectedColor, setSelectedColor] = useState(defaultColor);
+  const [selectedBgColor, setSelectedBgColor] = useState("#FFFF00");
   const tiptap = editor as Editor | null;
   const editorReady = Boolean(tiptap);
   const [, forceUpdate] = useState(0);
+  const colorSelectTimeoutRef = useRef<number | null>(null);
+  const bgColorSelectTimeoutRef = useRef<number | null>(null);
+  const [tooltipOpen, setTooltipOpen] = useState<Record<string, boolean>>({});
 
   // 订阅编辑器事务与选区变化，保证激活态可以立即刷新
   useEffect(() => {
@@ -112,11 +133,30 @@ export default function Toolbar() {
   }, [tiptap]);
 
   const openLinkModal = () => {
-    message.info("链接功能稍后补充，当前为占位按钮");
+    if (!tiptap) return;
+    const { from, to } = tiptap.state.selection;
+    const selectedText = tiptap.state.doc.textBetween(from, to);
+    const existingLink = tiptap.getAttributes("link");
+    
+    setLinkValue(existingLink.href || selectedText || "");
+    setLinkModalOpen(true);
   };
 
   const applyLink = () => {
-    message.info("链接插入暂未实现");
+    if (!tiptap) return;
+    const url = linkValue.trim();
+    
+    if (url) {
+      // 如果 URL 不包含协议，自动添加 https://
+      const href = url.match(/^https?:\/\//) ? url : `https://${url}`;
+      tiptap.chain().focus().extendMarkRange("link").setLink({ href }).run();
+    } else {
+      // 如果 URL 为空，移除链接
+      tiptap.chain().focus().unsetLink().run();
+    }
+    
+    setLinkModalOpen(false);
+    setLinkValue("");
   };
 
   const handleClick = (id: string) => () => {
@@ -144,21 +184,15 @@ export default function Toolbar() {
         tiptap.chain().focus().toggleStrike().run();
         break;
       case "underline":
-        message.info("下划线暂未实现");
+        tiptap.chain().focus().toggleUnderline().run();
         break;
-      case "align-left":
-      case "align-center":
-      case "align-justify":
-        message.info("对齐方式暂未实现");
-        break;
+      // 对齐方式已改为下拉菜单，不再使用 handleClick
       case "bullet-list":
         tiptap.chain().focus().toggleBulletList().run();
         break;
-      case "ordered-list":
-        tiptap.chain().focus().toggleOrderedList().run();
-        break;
+      // 有序列表已改为下拉菜单，不再使用 handleClick
       case "check-list":
-        message.info("待办列表暂未实现");
+        tiptap.chain().focus().toggleTaskList().run();
         break;
       case "blockquote":
         tiptap.chain().focus().toggleBlockquote().run();
@@ -172,6 +206,17 @@ export default function Toolbar() {
       default:
         break;
     }
+  };
+
+  // 获取当前标题级别对应的 key
+  const getCurrentHeadingKey = (): string => {
+    if (!tiptap) return "0";
+    for (let i = 1; i <= 6; i++) {
+      if (tiptap.isActive("heading", { level: i as 1 | 2 | 3 | 4 | 5 | 6 })) {
+        return `${i}`;
+      }
+    }
+    return "0"; // 正文
   };
 
   const dropdownHandlers: Record<string, (key: string) => void> = {
@@ -188,8 +233,27 @@ export default function Toolbar() {
           .run();
       }
     },
-    "font-size": () => {
-      message.info("字号调整暂未实现");
+    "font-size": (key: string) => {
+      if (!tiptap) return;
+      // 字号调整
+      const size = key.replace("px", "");
+      tiptap.chain().focus().setFontSize(size).run();
+    },
+    "text-align": (key: string) => {
+      if (!tiptap) return;
+      tiptap.chain().focus().setTextAlign(key as "left" | "center" | "right" | "justify").run();
+    },
+    "ordered-list": (key: string) => {
+      if (!tiptap) return;
+      // 先切换为有序列表
+      if (!tiptap.isActive("orderedList")) {
+        tiptap.chain().focus().toggleOrderedList().run();
+      }
+      // 设置编号方式（通过 CSS 类名实现）
+      const listItems = document.querySelectorAll(".tiptap-editor ol li");
+      listItems.forEach((item) => {
+        (item as HTMLElement).style.listStyleType = key;
+      });
     },
   };
 
@@ -201,6 +265,61 @@ export default function Toolbar() {
     };
   };
 
+  // 处理颜色选择（带防抖）
+  const handleColorSelect = useCallback((color: string) => {
+    if (!tiptap) return;
+    
+    // 立即更新 UI，让用户看到颜色变化
+    setSelectedColor(color);
+    
+    // 清除之前的定时器
+    if (colorSelectTimeoutRef.current) {
+      clearTimeout(colorSelectTimeoutRef.current);
+    }
+    
+    // 设置新的防抖定时器（300ms）
+    colorSelectTimeoutRef.current = window.setTimeout(() => {
+      tiptap.chain().focus().setColor(color).run();
+    }, 300);
+  }, [tiptap]);
+  
+  // 处理背景颜色选择（带防抖）
+  const handleBgColorSelect = useCallback((color: string) => {
+    if (!tiptap) return;
+    
+    // 立即更新 UI，让用户看到颜色变化
+    setSelectedBgColor(color);
+    
+    // 清除之前的定时器
+    if (bgColorSelectTimeoutRef.current) {
+      clearTimeout(bgColorSelectTimeoutRef.current);
+    }
+    
+    // 设置新的防抖定时器（300ms）
+    bgColorSelectTimeoutRef.current = window.setTimeout(() => {
+      // 使用 highlight 扩展来设置背景颜色
+      tiptap.chain().focus().toggleHighlight({ color }).run();
+    }, 300);
+  }, [tiptap]);
+  
+  // 组件卸载时清除定时器
+  useEffect(() => {
+    return () => {
+      if (colorSelectTimeoutRef.current !== null) {
+        window.clearTimeout(colorSelectTimeoutRef.current);
+      }
+      if (bgColorSelectTimeoutRef.current !== null) {
+        window.clearTimeout(bgColorSelectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // 处理渐变色选择
+  const handleGradientSelect = (gradientId: string) => {
+    message.info(`渐变色选择功能暂未实现。选择的渐变: ${gradientId}`);
+  };
+
+
   const isActive = (id: string): boolean => {
     if (!tiptap) return false;
     switch (id) {
@@ -210,8 +329,12 @@ export default function Toolbar() {
         return tiptap.isActive("italic");
       case "strike":
         return tiptap.isActive("strike");
+      case "underline":
+        return tiptap.isActive("underline");
       case "bullet-list":
         return tiptap.isActive("bulletList");
+      case "check-list":
+        return tiptap.isActive("taskList");
       case "ordered-list":
         return tiptap.isActive("orderedList");
       case "blockquote":
@@ -223,64 +346,405 @@ export default function Toolbar() {
     }
   };
 
+  // 获取当前标题级别
+  const getCurrentHeadingLevel = (): string => {
+    if (!tiptap) return "正文";
+    for (let i = 1; i <= 6; i++) {
+      if (tiptap.isActive("heading", { level: i as 1 | 2 | 3 | 4 | 5 | 6 })) {
+        return `标题 ${i}`;
+      }
+    }
+    return "正文";
+  };
+
+  // 获取当前字号
+  const getCurrentFontSize = (): string => {
+    if (!tiptap) return "15px";
+    const textStyle = tiptap.getAttributes("textStyle");
+    const fontSize = textStyle?.fontSize;
+    if (fontSize) {
+      return `${fontSize}px`;
+    }
+    return "15px"; // 默认字号
+  };
+
+  // 对齐方式选项（在组件内部定义，以便使用图标组件）
+  const alignItems = [
+    { key: "left", label: "左对齐", icon: <AlignLeftOutlined /> },
+    { key: "center", label: "居中", icon: <AlignCenterOutlined /> },
+    { key: "right", label: "右对齐", icon: <AlignRightOutlined /> },
+    { key: "justify", label: "两端对齐", icon: <AlignLeftOutlined style={{ transform: "scaleX(-1)" }} /> },
+  ].map((item) => ({
+    key: item.key,
+    label: item.label,
+    icon: item.icon,
+  }));
+
+  // 获取当前对齐方式
+  const getCurrentAlignment = (): { label: string; icon: ReactNode; key: string } => {
+    if (!tiptap) {
+      return { label: "左对齐", icon: <AlignLeftOutlined />, key: "left" };
+    }
+    const align = tiptap.getAttributes("textAlign")?.textAlign || "left";
+    const alignMap: Record<string, { label: string; icon: ReactNode }> = {
+      left: { label: "左对齐", icon: <AlignLeftOutlined /> },
+      center: { label: "居中", icon: <AlignCenterOutlined /> },
+      right: { label: "右对齐", icon: <AlignRightOutlined /> },
+      justify: { label: "两端对齐", icon: <AlignLeftOutlined style={{ transform: "scaleX(-1)" }} /> },
+    };
+    return { ...alignMap[align] || alignMap.left, key: align };
+  };
+
+  // 获取当前有序列表编号方式
+  const getCurrentOrderedListType = (): string => {
+    if (!tiptap || !tiptap.isActive("orderedList")) {
+      return "decimal";
+    }
+    // 注意：Tiptap 的 orderedList 扩展默认使用 decimal
+    // 可以通过 CSS 或扩展配置来改变编号方式
+    return "decimal";
+  };
+
+  // 动态生成 toolbarGroups，以便显示当前标题级别
+  const toolbarGroups: ToolbarItem[][] = [
+    [
+      { id: "undo", label: "撤销", content: <UndoOutlined /> },
+      { id: "redo", label: "重做", content: <RedoOutlined /> },
+      { id: "clearFormat", label: "清除格式", content: <ClearOutlined /> },
+    ],
+    [{ id: "cursor", label: "光标", content: <EditOutlined /> }],
+    [
+      {
+        id: "text-mode",
+        label: "标题",
+        content: <span className="text-label heading-text">{getCurrentHeadingLevel()}</span>,
+        type: "dropdown",
+      },
+      {
+        id: "font-size",
+        label: "字号",
+        content: <span className="text-label">{getCurrentFontSize()}</span>,
+        type: "dropdown",
+      },
+    ],
+    [
+      { id: "bold", label: "加粗", content: <BoldOutlined /> },
+      { id: "italic", label: "斜体", content: <ItalicOutlined /> },
+      { id: "strike", label: "删除线", content: <StrikethroughOutlined /> },
+      { id: "underline", label: "下划线", content: <UnderlineOutlined /> },
+    ],
+    [
+      {
+        id: "text-color",
+        label: "文字颜色",
+        content: (
+          <span className="dropdown-icon-text">
+            <EditOutlined />
+            <span 
+              className="text-color-icon" 
+              style={{ color: selectedColor }}
+            >
+              A
+            </span>
+          </span>
+        ),
+        type: "color-picker",
+      },
+      {
+        id: "bg-color",
+        label: "背景颜色",
+        content: (
+          <span className="dropdown-icon-text">
+            <BgColorsOutlined />
+            <span 
+              className="bg-color-icon" 
+              style={{ color: selectedBgColor }}
+            >
+              A
+            </span>
+          </span>
+        ),
+        type: "color-picker",
+      },
+    ],
+    [
+      {
+        id: "text-align",
+        label: "对齐",
+        content: (
+          <span className="dropdown-icon-text">
+            {getCurrentAlignment().icon}
+            <span className="text-label">{getCurrentAlignment().label}</span>
+          </span>
+        ),
+        type: "dropdown",
+      },
+    ],
+    [
+      { id: "bullet-list", label: "无序列表", content: <UnorderedListOutlined /> },
+      {
+        id: "ordered-list",
+        label: "有序列表",
+        content: (
+          <span className="dropdown-icon-text">
+            <OrderedListOutlined />
+            <span className="text-label">
+              {orderedListTypeItems.find(
+                (item) => item.key === getCurrentOrderedListType()
+              )?.description || "数字"}
+            </span>
+          </span>
+        ),
+        type: "dropdown",
+      },
+      { id: "check-list", label: "待办列表", content: <CheckSquareOutlined /> },
+    ],
+    [
+      { id: "blockquote", label: "引用", content: <FileTextOutlined /> },
+      { id: "code-block", label: "代码块", content: <CodeOutlined /> },
+      { id: "link", label: "链接", content: <LinkOutlined /> },
+    ],
+  ];
+
   return (
     <div className="toolbar">
       {toolbarGroups.map((group, index) => (
         <div className="toolbar-group" key={`toolbar-group-${index}`}>
-          {group.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`toolbar-button ${
-                item.type === "dropdown" ? "dropdown-button" : ""
-              } ${!item.type && isActive(item.id) ? "active" : ""}`}
-              disabled={!editorReady}
-              aria-label={item.label}
-              onClick={
-                item.type === "dropdown" ? undefined : handleClick(item.id)
-              }
-            >
-              <Tooltip placement="bottom" title={item.label}>
-                {item.type === "dropdown" ? (
-                  <Dropdown
-                    menu={{
-                      items:
-                        item.id === "text-mode"
-                          ? titleLevelItems
-                          : fontSizeItems,
-                      onClick: handleDropdownClick(item.id),
-                    }}
-                    trigger={["click"]}
+          {group.map((item) =>
+            item.type === "dropdown" ? (
+              <Tooltip
+                key={item.id}
+                placement="bottom"
+                title={item.label}
+                trigger="hover"
+                mouseEnterDelay={0.5}
+                open={tooltipOpen[item.id]}
+                onOpenChange={(open) => {
+                  setTooltipOpen((prev) => ({ ...prev, [item.id]: open }));
+                }}
+              >
+                <Dropdown
+                  menu={{
+                    items:
+                      item.id === "text-mode"
+                        ? titleLevelItems.map((item) => ({
+                            ...item,
+                            ...(item.key === getCurrentHeadingKey() ? { icon: <span style={{ color: "#1890ff" }}>✓</span> } : {}),
+                          }))
+                        : item.id === "text-align"
+                        ? alignItems.map((alignItem) => {
+                            const currentAlign = getCurrentAlignment();
+                            return {
+                            key: alignItem.key,
+                            label: (
+                              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                {alignItem.icon}
+                                <span>{alignItem.label}</span>
+                                {alignItem.key === currentAlign.key && <span style={{ color: "#1890ff", marginLeft: "auto" }}>✓</span>}
+                              </span>
+                            ),
+                          };
+                          })
+                        : item.id === "ordered-list"
+                        ? orderedListTypeItems.map((listItem) => ({
+                            ...listItem,
+                            label: `${listItem.label} ${listItem.description}`,
+                            ...(listItem.key === getCurrentOrderedListType() ? { icon: <span style={{ color: "#1890ff" }}>✓</span> } : {}),
+                          }))
+                        : item.id === "font-size"
+                        ? fontSizeItems.map((sizeItem) => ({
+                            ...sizeItem,
+                            ...(sizeItem.key === getCurrentFontSize() ? { icon: <span style={{ color: "#1890ff" }}>✓</span> } : {}),
+                          }))
+                        : fontSizeItems,
+                    onClick: ({ key }: { key: string }) => {
+                      // 点击菜单项时立即隐藏 Tooltip
+                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
+                      const handler = dropdownHandlers[item.id];
+                      if (handler) handler(key);
+                    },
+                  }}
+                  trigger={["click"]}
+                  disabled={!editorReady}
+                  onOpenChange={(open) => {
+                    // 下拉菜单打开时立即隐藏 Tooltip
+                    if (open) {
+                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
+                    }
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="dropdown-trigger-button"
                     disabled={!editorReady}
+                    aria-label={item.label}
+                    onClick={() => {
+                      // 点击按钮时立即隐藏 Tooltip
+                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
+                    }}
                   >
-                    <span className="toolbar-content">{item.content}</span>
-                  </Dropdown>
-                ) : (
-                  <span className="toolbar-content">{item.content}</span>
-                )}
-              
-              {item.type === "dropdown" ? (
-                <span className="caret">
-                  <svg
-                    viewBox="0 0 1024 1024"
-                    version="1.1"
-                    xmlns="http://www.w3.org/2000/svg"
-                    p-id="5562"
-                    id="mx_n_1768397798864"
-                    width="10"
-                    height="10"
-                  >
-                    <path
-                      d="M946.986 372.374L558.08 797.651a61.202 61.202 0 0 1-45.972 20.801 61.202 61.202 0 0 1-45.976-20.801L77.226 372.374c-18.985-20.052-24.852-49.279-15.04-75.093s33.493-43.84 61.014-46.292h777.494c27.627 2.347 51.412 20.265 61.226 46.187 9.92 25.92 4.054 55.038-14.934 75.198z"
-                      p-id="5563"
-                      fill="#1f1f1f"
-                    ></path>
-                  </svg>
-                </span>
-              ) : null}
+                    <span className="dropdown-text">{item.content}</span>
+                    <span className="dropdown-caret">
+                      <DownOutlined style={{ fontSize: "12px", color: "#666666" }} />
+                    </span>
+                  </button>
+                </Dropdown>
               </Tooltip>
-            </button>
-          ))}
+            ) : item.type === "color-picker" ? (
+              <Tooltip
+                key={item.id}
+                placement="bottom"
+                title={item.label}
+                trigger="hover"
+                mouseEnterDelay={0.5}
+                open={tooltipOpen[item.id]}
+                onOpenChange={(open) => {
+                  setTooltipOpen((prev) => ({ ...prev, [item.id]: open }));
+                }}
+              >
+                <Dropdown
+                  placement="bottomLeft"
+                  align={{ offset: [0, 4] }}
+                  onOpenChange={(open) => {
+                    // 下拉菜单打开时立即隐藏 Tooltip
+                    if (open) {
+                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
+                    }
+                  }}
+                  dropdownRender={() => {
+                  const isBgColor = item.id === "bg-color";
+                  const currentColor = isBgColor ? selectedBgColor : selectedColor;
+                  const handleSelect = isBgColor ? handleBgColorSelect : handleColorSelect;
+                  
+                  return (
+                    <div className="color-picker-dropdown">
+                      {/* 默认颜色 - 包含所有实色网格 */}
+                      <div className="color-picker-section">
+                        <div className="color-picker-header">
+                          <span>默认</span>
+                        </div>
+                        <div className="color-grid">
+                          {solidColors.map((row, rowIndex) => (
+                            <div key={rowIndex} className="color-grid-row">
+                              {row.map((color) => (
+                                <div
+                                  key={color}
+                                  className={`color-swatch ${currentColor === color ? "selected" : ""}`}
+                                  style={{ backgroundColor: color }}
+                                  onClick={() => handleSelect(color)}
+                                  title={color}
+                                >
+                                  {currentColor === color && (
+                                    <span className="color-checkmark">✓</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 渐变色 */}
+                      <div className="color-picker-section">
+                        <div className="color-picker-header">
+                          <span>渐变色</span>
+                        </div>
+                        <div className="gradient-grid">
+                          {gradientColors.map((gradient) => (
+                            <div
+                              key={gradient.id}
+                              className="gradient-swatch"
+                              style={{
+                                background: `linear-gradient(to right, ${gradient.colors[0]}, ${gradient.colors[1]})`,
+                              }}
+                              onClick={() => handleGradientSelect(gradient.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 最近使用的自定义颜色 */}
+                      <div className="color-picker-section">
+                        <div className="color-picker-header">
+                          <span>最近使用自定义颜色</span>
+                        </div>
+                        <div className="color-picker-empty">暂无</div>
+                      </div>
+
+                      <Divider style={{ margin: "6px 0" }} />
+
+                      {/* 更多颜色 - 直接显示拾色器 */}
+                      <div className="color-picker-section">
+                        <div className="color-picker-header-advanced">
+                          <div className="color-picker-header">
+                            <BgColorsOutlined style={{ fontSize: "12px" }} />
+                            <span>更多颜色</span>
+                          </div>
+                          <div className="color-picker-advanced">
+                            <ColorPicker
+                              value={currentColor}
+                              onChange={(color) => {
+                                const hexColor = color.toHexString();
+                                // 立即更新 UI
+                                if (isBgColor) {
+                                  setSelectedBgColor(hexColor);
+                                } else {
+                                  setSelectedColor(hexColor);
+                                }
+                                // 防抖执行实际的颜色应用
+                                handleSelect(hexColor);
+                              }}
+                              showText
+                              size="small"
+                              getPopupContainer={(triggerNode) => {
+                                // 找到颜色选择器下拉菜单的容器，确保弹窗在 Dropdown 内部
+                                const dropdown = triggerNode.closest('.ant-dropdown') as HTMLElement;
+                                return dropdown || document.body;
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }}
+                  trigger={["click"]}
+                  disabled={!editorReady}
+                >
+                  <button
+                    type="button"
+                    className="dropdown-trigger-button"
+                    disabled={!editorReady}
+                    aria-label={item.label}
+                    onClick={() => {
+                      // 点击按钮时立即隐藏 Tooltip
+                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
+                    }}
+                  >
+                    <span className="dropdown-text">{item.content}</span>
+                    <span className="dropdown-caret">
+                      <DownOutlined style={{ fontSize: "12px", color: "#666666" }} />
+                    </span>
+                  </button>
+                </Dropdown>
+              </Tooltip>
+            ) : (
+              <button
+                key={item.id}
+                type="button"
+                className={`toolbar-button ${
+                  isActive(item.id) ? "active" : ""
+                }`}
+                disabled={!editorReady}
+                aria-label={item.label}
+                onClick={handleClick(item.id)}
+              >
+                <Tooltip placement="bottom" title={item.label}>
+                  <span className="toolbar-content">{item.content}</span>
+                </Tooltip>
+              </button>
+            )
+          )}
         </div>
       ))}
 
@@ -292,7 +756,7 @@ export default function Toolbar() {
         okText="应用"
         cancelText="取消"
       >
-        <Space direction="vertical" style={{ width: "100%" }}>
+        <Space orientation="vertical" style={{ width: "100%" }}>
           <Input
             value={linkValue}
             onChange={(e) => setLinkValue(e.target.value)}
@@ -301,285 +765,7 @@ export default function Toolbar() {
           />
         </Space>
       </Modal>
+
     </div>
-  );
-}
-
-type IconProps = {
-  className?: string;
-};
-
-function UndoIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="6952"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M289.6384 256H614.4a307.2 307.2 0 1 1 0 614.4H204.8a51.2 51.2 0 0 1 0-102.4h409.6a204.8 204.8 0 1 0 0-409.6H286.0032l59.2384 59.2384A51.2 51.2 0 1 1 272.7936 489.984L128 345.2416a51.2 51.2 0 0 1 0-72.448L272.7936 128a51.2 51.2 0 0 1 72.448 72.3968L289.6384 256z"
-        fill="#2c2c2c"
-        p-id="6953"
-      ></path>
-    </svg>
-  );
-}
-
-function RedoIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      style={{ transform: "scaleX(-1)" }}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="6952"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M289.6384 256H614.4a307.2 307.2 0 1 1 0 614.4H204.8a51.2 51.2 0 0 1 0-102.4h409.6a204.8 204.8 0 1 0 0-409.6H286.0032l59.2384 59.2384A51.2 51.2 0 1 1 272.7936 489.984L128 345.2416a51.2 51.2 0 0 1 0-72.448L272.7936 128a51.2 51.2 0 0 1 72.448 72.3968L289.6384 256z"
-        fill="#2c2c2c"
-        p-id="6953"
-      ></path>
-    </svg>
-  );
-}
-
-function ClearFormatIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="11182"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M604.536 736.222L893.331 453.53 605.553 182.53 334.554 465.732z m-72.707 71.182L264.39 539.456 145.923 660.973l164.734 164.735a50.844 50.844 0 0 0 36.1 14.745h107.79a101.688 101.688 0 0 0 71.18-28.981z m109.315 35.083h254.22a50.844 50.844 0 0 1 0 101.688H346.248a152.532 152.532 0 0 1-107.79-44.743L73.725 734.697a101.688 101.688 0 0 1 0-142.363L531.32 111.857a101.688 101.688 0 0 1 143.38-3.56l287.27 271a101.688 101.688 0 0 1 4.067 143.889l-3.05 3.05z"
-        fill="#2c2c2c"
-        p-id="11183"
-      ></path>
-    </svg>
-  );
-}
-
-function CursorIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="m6 4 6 16 2.2-5.8L20 14z" />
-    </svg>
-  );
-}
-
-function BoldIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      style={{ transform: "scale(0.8)" }}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="14276"
-      width="13"
-      height="13"
-    >
-      <path
-        d="M597.32864 554.666667H255.995307V426.666667h341.333333v-1.536a149.333333 149.333333 0 0 0 0-295.594667V128H255.995307v768h341.333333a170.666667 170.666667 0 1 0 0-341.333333z m42.666667 469.333333H85.32864V0h512v0.853333a277.333333 277.333333 0 0 1 211.626667 478.208A298.666667 298.666667 0 0 1 639.995307 1024z"
-        fill="#2c2c2c"
-        p-id="14277"
-      ></path>
-    </svg>
-  );
-}
-
-function ItalicIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      style={{ transform: "scale(0.9)" }}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="12683"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M329.649231 72.625231h510.739692L820.066462 177.230769H626.845538l-137.216 709.553231H682.929231l-20.322462 104.605538H151.788308l20.322461-104.605538H364.701538L502.547692 177.230769H309.326769z"
-        fill="#333333"
-        p-id="12684"
-      ></path>
-    </svg>
-  );
-}
-
-function StrikeIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      style={{ transform: "scale(1)" }}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="15317"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M1024 511.81H687.11c-38.48-16.41-94.03-35.49-167.45-57.37-77.09-22.34-126.25-39.09-146.36-50.27-45.8-24.57-68.14-56.98-68.14-97.18 0-45.82 18.98-79.32 56.98-101.66 33.5-20.11 79.32-29.07 138.52-29.07 64.8 0 115.07 13.41 150.82 42.45 34.64 27.93 56.98 70.39 67.05 128.48H809c-7.82-83.77-37.98-147.45-91.61-189.91C666 115.94 594.5 95.83 505.14 95.83c-82.68 0-150.82 17.89-203.34 53.64-59.2 37.98-88.25 92.73-88.25 161.98 0 67.05 30.16 118.43 91.61 154.18 19.87 10.38 61.41 26.15 123.58 46.19H0v93.09h681.64c35.63 26.24 54.75 59.59 54.75 100.93 0 42.43-20.11 75.95-60.32 100.55-40.23 24.57-93.84 36.86-158.66 36.86-71.5 0-125.11-15.64-161.98-44.68-40.23-32.41-64.8-83.8-72.61-153.07h-90.5c6.7 98.32 41.34 170.93 103.91 218.98 53.61 40.2 127.34 60.32 221.18 60.32 94.98 0 169.82-20.11 225.68-59.2 55.86-40.23 83.8-96.09 83.8-165.34 0-35.82-8.24-67.53-24.42-95.34H1024v-93.11z"
-        p-id="15318"
-        fill="#2c2c2c"
-      ></path>
-    </svg>
-  );
-}
-
-function UnderlineIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 1024 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="17254"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M156.09136 918.752731a50.844091 50.844091 0 0 1 0-101.688183h711.81728a50.844091 50.844091 0 0 1 0 101.688183z m50.844092-762.661371a50.844091 50.844091 0 0 1 101.688183 0v305.064549a203.376365 203.376365 0 1 0 406.75273 0v-305.064549a50.844091 50.844091 0 1 1 101.688183 0v305.064549a305.064548 305.064548 0 1 1-610.129096 0z"
-        fill="#2c2c2c"
-        p-id="17255"
-      ></path>
-    </svg>
-  );
-}
-
-function AlignLeftIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M4 6h16M4 10h10M4 14h16M4 18h10" />
-    </svg>
-  );
-}
-
-function AlignCenterIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M4 6h16M7 10h10M4 14h16M7 18h10" />
-    </svg>
-  );
-}
-
-function AlignJustifyIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-    </svg>
-  );
-}
-
-function BulletListIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle cx="6" cy="7" r="1.4" fill="currentColor" />
-      <circle cx="6" cy="12" r="1.4" fill="currentColor" />
-      <circle cx="6" cy="17" r="1.4" fill="currentColor" />
-      <path d="M10 7h10M10 12h10M10 17h10" />
-    </svg>
-  );
-}
-
-function NumberListIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M5 7h1.8M5 12h1.8M5 17h1.8" />
-      <path d="M10 7h10M10 12h10M10 17h10" />
-    </svg>
-  );
-}
-
-function CheckListIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M4 6.5 6 9l3-3" />
-      <path d="M4 12.5 6 15l3-3" />
-      <path d="M4 18.5 6 21l3-3" />
-      <path d="M12 7h8M12 12h8M12 17h8" />
-    </svg>
-  );
-}
-
-function LinkIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M9 15 7 17a4 4 0 1 1 0-6l2-2" />
-      <path d="M15 9 17 7a4 4 0 1 1 0 6l-2 2" />
-      <path d="M10.5 13.5 13.5 10.5" />
-    </svg>
-  );
-}
-
-function QuoteIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M7 9.5C7 8 8 7 9.5 7S12 8 12 9.5 11 12 9.5 12H8l-1 4" />
-      <path d="M14 9.5C14 8 15 7 16.5 7S19 8 19 9.5 18 12 16.5 12H15l-1 4" />
-    </svg>
-  );
-}
-
-function CodeIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={`toolbar-icon ${className ?? ""}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M9 18 3 12l6-6" />
-      <path d="M15 6 21 12l-6 6" />
-    </svg>
   );
 }

@@ -1,12 +1,15 @@
 .header {
   height: 56px;
   padding: 0 20px;
-  /* background: #ffffff; */
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
+  
+  /* 确保 Header 随 Sidebar 移动的过渡效果 */
+  transition: padding-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 左侧 */
@@ -14,6 +17,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  /* 随 Sidebar 移动 */
+  padding-left: var(--sidebar-width, 0px);
+  transition: padding-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-title {
@@ -38,29 +44,24 @@
 .header-badge {
   font-size: 12px;
   font-weight: 600;
-  color: #16a34a;
-  border: 1px solid #16a34a;
+  margin: 0;
   border-radius: 999px;
-  padding: 2px 8px;
 }
 
 /* 图标按钮 */
 .icon-btn {
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  padding: 0;
   border-radius: 6px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
-
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .icon-btn:hover {
-  background: #f3f4f6;
+  background: #f3f4f6 !important;
 }
 
 /* 普通按钮 */
@@ -87,5 +88,6 @@
 }
 
 .btn.primary:hover {
-  background: #16a34a;
+  background: #16a34a !important;
+  border-color: #16a34a !important;
 }

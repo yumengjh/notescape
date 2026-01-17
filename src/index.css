@@ -24,3 +24,9 @@ body {
 *::after {
   box-sizing: border-box;
 }
+
+/* 确保 ColorPicker 的弹窗在 Dropdown 之上 */
+.ant-color-picker-popup,
+.ant-popover.ant-color-picker-popup {
+  z-index: 1050 !important;
+}

@@ -1,22 +1,24 @@
 
 .dashboard {
-  min-height: 100vh;
+  height: 100vh;
   background: #ffffff;
   color: #0f172a;
+  overflow: hidden;
 }
 
 .dashboard-shell {
   position: relative;
   display: block;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .dashboard-sidebar {
-  position: fixed;
+  position: absolute;
   inset: 0 auto 0 0;
   display: flex;
   align-items: stretch;
-  z-index: 20;
+  z-index: 40; /* 提高 z-index，确保在 toolbar 和 header 之上 */
 }
 
 .dashboard-main {
@@ -24,18 +26,101 @@
   flex-direction: column;
   min-width: 0;
   width: 100%;
-  /* 让 Header / Toolbar / 内容整体在 Sidebar 右侧开始，避免被覆盖 */
-  padding-left: var(--sidebar-width, 0px);
+  height: 100vh;
+  margin-left: 0;
+  transition: none;
+  overflow: hidden;
 }
 
 .dashboard-shell > .app-container {
   height: 100%;
 }
 
+/* Header 固定定位，不随 Sidebar 移动 */
+.dashboard-main > .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  z-index: 30;
+  background: #ffffff;
+}
+
+/* Toolbar 固定定位，位于 Header 下方，固定在中间不随 Sidebar 移动 */
+.toolbar-container {
+  position: fixed;
+  top: 56px; /* Header 高度 */
+  left: 0;
+  right: 0;
+  height: 40px; /* Toolbar 固定高度 */
+  z-index: 29;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e7e7e7;
+  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); */
+}
+
+.toolbar-container .toolbar {
+  width: 100%;
+  max-width: 1200px; /* 可根据需要调整最大宽度 */
+  border-bottom: none; /* 移除 toolbar 自身的边框 */
+  box-shadow: none; /* 移除 toolbar 自身的阴影 */
+}
+
 .dashboard-content {
   flex: 1;
-  padding: 0px 0px 28px 0px;
-  overflow: auto;
+  padding-top: 56px; /* Header 高度 */
+  padding-bottom: 28px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* 当有 Toolbar 时，增加顶部 padding */
+.dashboard-main:has(.toolbar-container) .dashboard-content {
+  padding-top: 96px; /* Header(56px) + Toolbar(40px) */
+}
+
+.dashboard-content > * {
+  width: 100%;
+  max-width: 1200px; /* 与 Toolbar 保持一致 */
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* 编辑器容器特殊处理，确保居中且不受 Sidebar 影响 */
+.dashboard-content .tiptap-shell {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 32px 40px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* 针对特殊页面的处理 */
+.dashboard-content section {
+  padding: 20px;
+}
+
+/* 针对编辑器页面的特殊处理 */
+.dashboard-content > div:not(section):not(.main-page) {
+  padding: 0; /* 编辑器不需要额外的内边距 */
+}
+
+/* 首页特殊处理 */
+.dashboard-content > .main-page {
+  padding: 24px 32px;
 }
 
 .page-header {
@@ -67,8 +152,21 @@
   padding: 14px;
 }
 
-
-/* .toolbar-container{
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .toolbar-container .toolbar {
+    max-width: 100%;
+  }
   
-} */
+  .dashboard-content > * {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+  
+  .dashboard-main > .header {
+    padding-left: 0;
+    left: 0;
+  }
+  
+}
 
