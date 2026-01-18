@@ -83,3 +83,10 @@ export function generateRevisionId(docId: string, docVer: number): string {
 export function generateSnapshotId(docId: string, docVer: number): string {
   return `${docId}@snap@${docVer}`;
 }
+
+/**
+ * 生成日志 ID (log_xxx)，用于 audit_logs、security_logs
+ */
+export function generateLogId(): string {
+  return `log_${Date.now()}_${uuidv4().split('-')[0]}`;
+}

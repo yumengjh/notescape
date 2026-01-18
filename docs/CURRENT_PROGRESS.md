@@ -63,6 +63,7 @@
 **装饰器 (decorators/)**
 - ✅ `current-user.decorator.ts` - 获取当前用户
 - ✅ `public.decorator.ts` - 公开接口标记
+- ✅ `audit-log.decorator.ts` - 审计日志（@AuditLog）
 - ⏳ `roles.decorator.ts` - 角色权限（待使用）
 
 **守卫 (guards/)**
@@ -91,7 +92,7 @@
 
 **路径：** `src/entities/`
 
-**已定义的实体（14个）：**
+**已定义的实体（16个）：**
 - ✅ `user.entity.ts` - 用户
 - ✅ `workspace.entity.ts` - 工作空间
 - ✅ `workspace-member.entity.ts` - 工作空间成员
@@ -101,6 +102,8 @@
 - ✅ `doc-revision.entity.ts` - 文档修订
 - ✅ `doc-snapshot.entity.ts` - 文档快照
 - ✅ `asset.entity.ts` - 资产
+- ✅ `audit-log.entity.ts` - 审计日志
+- ✅ `security-log.entity.ts` - 安全日志
 - ✅ `tag.entity.ts` - 标签
 - ✅ `favorite.entity.ts` - 收藏
 - ✅ `comment.entity.ts` - 评论
@@ -130,6 +133,8 @@
 - ✅ 文档模块集成
 - ✅ 块模块集成
 - ✅ 资产模块集成
+- ✅ 安全模块集成
+- ✅ 全局限流（Throttler）
 
 ---
 
@@ -279,6 +284,32 @@
 - `assets.module.ts`、`assets.controller.ts`、`assets.service.ts`
 - `dto/upload-asset.dto.ts`、`dto/query-assets.dto.ts`
 
+### 9. 安全模块 (security) ✅
+
+**路径：** `src/modules/security/`，参考 [SAFE_DESIGN.md](./SAFE_DESIGN.md)
+
+**已实现：**
+- ✅ **安全日志 (security_logs)**：SecurityService.logEvent / logLoginSuccess / logLoginFailed / logLogout / logUnauthorizedAccess / logPermissionDenied / logRateLimitExceeded
+- ✅ **审计日志 (audit_logs)**：AuditService.record、findFiltered、findUserActivities、findResourceHistory、findSensitiveActions
+- ✅ **@AuditLog 装饰器** + **AuditLogInterceptor**（全局）：对带 @AuditLog 的接口自动写入 audit_logs，敏感字段脱敏
+- ✅ **ErrorCode 与 BusinessException**：`common/errors/error-codes.ts`、`common/exceptions/business.exception.ts`
+- ✅ **全局限流**：ThrottlerModule（60s/100 次）+ ThrottlerGuard
+
+**已实现接口：**
+- ✅ `GET /api/v1/security/events` - 查询安全日志（eventType、userId、ip、startDate、endDate、分页）
+- ✅ `GET /api/v1/security/audit` - 查询审计日志（action、resourceType、resourceId、userId、日期、分页）
+
+**集成：**
+- Auth：登录成功/失败、登出时写入 security_logs（ip、userAgent）
+- Documents：创建、删除时通过 @AuditLog 写入 audit_logs
+
+**相关文件：**
+- `security.module.ts`、`security.service.ts`、`audit.service.ts`、`security.controller.ts`
+- `interceptors/audit-log.interceptor.ts`、`constants/security-events.ts`
+- `dto/query-security-logs.dto.ts`、`dto/query-audit-logs.dto.ts`
+- `entities/audit-log.entity.ts`、`entities/security-log.entity.ts`
+- `common/decorators/audit-log.decorator.ts`、`common/errors/error-codes.ts`、`common/exceptions/business.exception.ts`
+
 ### 6. 其他功能模块
 
 **标签模块 (tags)**
@@ -323,7 +354,8 @@ app/
 │   │   ├── workspaces/      ✅ 工作空间模块
 │   │   ├── documents/       ✅ 文档模块
 │   │   ├── blocks/          ✅ 块模块
-│   │   └── assets/          ✅ 资产模块
+│   │   ├── assets/          ✅ 资产模块
+│   │   └── security/        ✅ 安全模块
 │   ├── app.module.ts        ✅ 主模块
 │   └── main.ts              ✅ 应用入口
 ├── docs/
@@ -354,6 +386,9 @@ app/
 
 ### 已使用（资产模块）
 - ✅ Multer（文件上传，@nestjs/platform-express + multer）
+
+### 已使用（安全模块）
+- ✅ @nestjs/throttler（全局限流）
 
 ---
 
@@ -394,6 +429,8 @@ app/
 ## 📚 相关文档
 
 - [API 设计文档](./API_DESIGN.md) - 详细的 API 接口设计
+- [安全与日志设计](./SAFE_DESIGN.md) - 安全机制、日志、审计、限流
+- [安全机制说明](./SECURITY.md) - 当前已实现的安全机制说明
 - [待办事项](./TODO.md) - 功能实现清单
 - [设置文档](./SETUP.md) - 环境配置说明
 

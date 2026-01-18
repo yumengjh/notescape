@@ -11,8 +11,14 @@ import { User } from '../../entities/user.entity';
 import { Session } from '../../entities/session.entity';
 import { hashPassword, comparePassword } from '../../common/utils/hash.util';
 import { generateUserId, generateSessionId } from '../../common/utils/id-generator.util';
+import { SecurityService } from '../security/security.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+
+export interface RequestContext {
+  ip?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -23,6 +29,7 @@ export class AuthService {
     private sessionRepository: Repository<Session>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private securityService: SecurityService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -72,13 +79,21 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ctx?: RequestContext) {
     const user = await this.validateUser(
       loginDto.emailOrUsername,
       loginDto.password,
     );
 
     if (!user) {
+      this.securityService
+        .logLoginFailed({
+          ipAddress: ctx?.ip || '0.0.0.0',
+          userAgent: ctx?.userAgent,
+          email: loginDto.emailOrUsername,
+          reason: 'Invalid credentials',
+        })
+        .catch(() => {});
       throw new UnauthorizedException('用户名或密码错误');
     }
 
@@ -91,6 +106,15 @@ export class AuthService {
 
     // 创建会话
     await this.createSession(user.userId, tokens);
+
+    this.securityService
+      .logLoginSuccess({
+        userId: user.userId,
+        email: user.email,
+        ipAddress: ctx?.ip || '0.0.0.0',
+        userAgent: ctx?.userAgent,
+      })
+      .catch(() => {});
 
     return {
       user: {
@@ -183,12 +207,19 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string, token: string) {
+  async logout(userId: string, token: string, ctx?: RequestContext) {
     // 删除会话
     await this.sessionRepository.delete({
       userId,
       token,
     });
+    this.securityService
+      .logLogout({
+        userId,
+        ipAddress: ctx?.ip || '0.0.0.0',
+        userAgent: ctx?.userAgent,
+      })
+      .catch(() => {});
   }
 
   async getCurrentUser(userId: string) {

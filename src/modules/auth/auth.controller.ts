@@ -3,10 +3,12 @@ import {
   Post,
   Get,
   Body,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -37,9 +39,11 @@ export class AuthController {
   @ApiOperation({ summary: '用户登录' })
   @ApiResponse({ status: 200, description: '登录成功' })
   @ApiResponse({ status: 401, description: '用户名或密码错误' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+    const ctx = { ip: req.ip || (req.socket?.remoteAddress as string), userAgent: req.headers?.['user-agent'] };
+    return this.authService.login(loginDto, ctx);
   }
+
 
   @Post('refresh')
   @Public()
@@ -59,8 +63,10 @@ export class AuthController {
   async logout(
     @CurrentUser() user: any,
     @Body('token') token: string,
+    @Req() req: Request,
   ) {
-    return this.authService.logout(user.userId, token);
+    const ctx = { ip: req.ip || (req.socket?.remoteAddress as string), userAgent: req.headers?.['user-agent'] };
+    return this.authService.logout(user.userId, token, ctx);
   }
 
   @Get('me')

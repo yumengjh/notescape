@@ -29,6 +29,7 @@ import { RevertVersionDto } from './dto/revert-version.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuditLog } from '../../common/decorators/audit-log.decorator';
 
 @ApiTags('documents')
 @Controller('documents')
@@ -39,6 +40,7 @@ export class DocumentsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @AuditLog({ action: 'CREATE', resourceType: 'document' })
   @ApiOperation({ summary: '创建文档' })
   @ApiResponse({ status: 201, description: '创建成功' })
   @ApiResponse({ status: 400, description: '请求参数错误' })
@@ -140,6 +142,7 @@ export class DocumentsController {
 
   @Delete(':docId')
   @HttpCode(HttpStatus.OK)
+  @AuditLog({ action: 'DELETE', resourceType: 'document', resourceIdKey: 'docId' })
   @ApiOperation({ summary: '删除文档' })
   @ApiParam({ name: 'docId', description: '文档ID' })
   @ApiResponse({ status: 200, description: '删除成功' })
