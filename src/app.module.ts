@@ -12,6 +12,9 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { BlocksModule } from './modules/blocks/blocks.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { SecurityModule } from './modules/security/security.module';
+import { TagsModule } from './modules/tags/tags.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { CommentsModule } from './modules/comments/comments.module';
 
 // 导入所有实体
 import { User } from './entities/user.entity';
@@ -86,6 +89,9 @@ import { SecurityLog } from './entities/security-log.entity';
     DocumentsModule,
     BlocksModule,
     AssetsModule,
+    TagsModule,
+    FavoritesModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [
