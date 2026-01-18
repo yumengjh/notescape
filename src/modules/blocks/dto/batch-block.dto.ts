@@ -95,6 +95,17 @@ export class BatchBlockDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => Object)
+  @Type(() => Object, {
+    discriminator: {
+      property: 'type',
+      subTypes: [
+        { value: BatchCreateOperation, name: 'create' },
+        { value: BatchUpdateOperation, name: 'update' },
+        { value: BatchDeleteOperation, name: 'delete' },
+        { value: BatchMoveOperation, name: 'move' },
+      ],
+    },
+    keepDiscriminatorProperty: true,
+  })
   operations: BatchOperation[];
 }

@@ -18,8 +18,8 @@ export class TransformInterceptor<T>
   ): Observable<SuccessResponse<T>> {
     return next.handle().pipe(
       map((data) => {
-        // 如果数据已经是标准格式，直接返回
-        if (data && typeof data === 'object' && 'success' in data) {
+        // 如果数据已经是标准格式 { success: true, data? }，直接返回
+        if (data && typeof data === 'object' && 'success' in data && data.success === true) {
           return data;
         }
 
