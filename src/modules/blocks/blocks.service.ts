@@ -16,6 +16,7 @@ import { DocRevision } from '../../entities/doc-revision.entity';
 import { DocumentsService } from '../documents/documents.service';
 import { VersionControlService } from '../documents/services/version-control.service';
 import { generateBlockId, generateVersionId } from '../../common/utils/id-generator.util';
+import { generateSortKey as generateSortKeyUtil } from '../../common/utils/sort-key.util';
 import { CreateBlockDto } from './dto/create-block.dto';
 import { UpdateBlockDto } from './dto/update-block.dto';
 import { MoveBlockDto } from './dto/move-block.dto';
@@ -45,14 +46,25 @@ export class BlocksService {
    * 创建块
    */
   async create(createBlockDto: CreateBlockDto, userId: string) {
-    // 检查文档权限
-    await this.documentsService.findOne(createBlockDto.docId, userId);
+    // 检查文档权限并获取文档信息（包含根块ID）
+    const document = await this.documentsService.findOne(createBlockDto.docId, userId);
 
-    // 如果指定了父块，验证父块存在
-    // 只有当 parentId 是有效的非空字符串时才检查
-    if (createBlockDto.parentId && typeof createBlockDto.parentId === 'string' && createBlockDto.parentId.trim() !== '') {
+    // 确定父块ID：如果未提供 parentId，则使用文档的根块ID
+    let parentId = createBlockDto.parentId;
+    if (!parentId || typeof parentId !== 'string' || parentId.trim() === '') {
+      // 获取文档的根块ID
+      const docEntity = await this.documentRepository.findOne({
+        where: { docId: createBlockDto.docId },
+        select: ['rootBlockId'],
+      });
+      if (!docEntity || !docEntity.rootBlockId) {
+        throw new NotFoundException('文档根块不存在');
+      }
+      parentId = docEntity.rootBlockId;
+    } else {
+      // 如果指定了父块，验证父块存在
       const parentBlock = await this.blockRepository.findOne({
-        where: { blockId: createBlockDto.parentId, isDeleted: false },
+        where: { blockId: parentId, isDeleted: false },
       });
       if (!parentBlock) {
         throw new NotFoundException('父块不存在');
@@ -66,7 +78,7 @@ export class BlocksService {
     const result = await this.dataSource.transaction(async (manager) => {
       const now = Date.now();
       const blockId = generateBlockId();
-      const sortKey = createBlockDto.sortKey || this.generateSortKey(createBlockDto.parentId);
+      const sortKey = createBlockDto.sortKey || await this.generateSortKey(createBlockDto.docId, parentId, manager);
 
       // 创建块
       const block = manager.create(Block, {
@@ -92,7 +104,7 @@ export class BlocksService {
         ver: 1,
         createdAt: now,
         createdBy: userId,
-        parentId: createBlockDto.parentId || '',
+        parentId: parentId, // 使用确定的父块ID（根块ID或指定的parentId）
         sortKey,
         indent: createBlockDto.indent || 0,
         collapsed: createBlockDto.collapsed || false,
@@ -283,11 +295,42 @@ export class BlocksService {
   }
 
   /**
-   * 生成排序键
+   * 生成排序键（异步方法，基于同级块的位置）
    */
-  private generateSortKey(parentId?: string): string {
-    // 简化实现，实际应该使用更复杂的排序算法
-    return Date.now().toString();
+  private async generateSortKey(docId: string, parentId: string, manager: any): Promise<string> {
+    // 查询同级块的最新版本
+    const siblings = await manager
+      .createQueryBuilder(BlockVersion, 'bv')
+      .innerJoin(Block, 'b', 'bv.blockId = b.blockId AND b.isDeleted = false')
+      .where('bv.docId = :docId', { docId })
+      .andWhere('bv.parentId = :parentId', { parentId })
+      .andWhere('bv.ver = b.latestVer') // 只获取最新版本
+      .getMany();
+
+    if (siblings.length === 0) {
+      // 没有同级块，返回中间值
+      return generateSortKeyUtil();
+    }
+
+    // 在 JavaScript 中按 sortKey 排序（数字比较）
+    siblings.sort((a, b) => {
+      const sortKeyA = (a.sortKey && a.sortKey.trim() !== '') ? parseInt(a.sortKey, 10) || 0 : 0;
+      const sortKeyB = (b.sortKey && b.sortKey.trim() !== '') ? parseInt(b.sortKey, 10) || 0 : 0;
+      if (sortKeyA !== sortKeyB) {
+        return sortKeyA - sortKeyB;
+      }
+      // 如果 sortKey 相同，按 blockId 排序
+      return a.blockId.localeCompare(b.blockId);
+    });
+
+    // 获取最后一个同级块的 sortKey
+    const lastSibling = siblings[siblings.length - 1];
+    const lastSortKey = lastSibling.sortKey && lastSibling.sortKey.trim() !== '' 
+      ? lastSibling.sortKey 
+      : '500000';
+
+    // 生成比最后一个更大的 sortKey
+    return generateSortKeyUtil(lastSortKey);
   }
 
   /**
@@ -596,8 +639,22 @@ export class BlocksService {
     now: number,
     manager: any,
   ) {
+    // 确定父块ID：如果未提供 parentId，则使用文档的根块ID
+    let parentId = operation.data.parentId;
+    if (!parentId || typeof parentId !== 'string' || parentId.trim() === '') {
+      // 获取文档的根块ID
+      const docEntity = await manager.findOne(Document, {
+        where: { docId },
+        select: ['rootBlockId'],
+      });
+      if (!docEntity || !docEntity.rootBlockId) {
+        throw new NotFoundException('文档根块不存在');
+      }
+      parentId = docEntity.rootBlockId;
+    }
+
     const blockId = generateBlockId();
-    const sortKey = operation.data.sortKey || this.generateSortKey(operation.data.parentId);
+    const sortKey = operation.data.sortKey || await this.generateSortKey(docId, parentId, manager);
 
     const block = manager.create(Block, {
       blockId,
@@ -621,7 +678,7 @@ export class BlocksService {
       ver: 1,
       createdAt: now,
       createdBy: userId,
-      parentId: operation.data.parentId || '',
+      parentId: parentId, // 使用确定的父块ID（根块ID或指定的parentId）
       sortKey,
       indent: operation.data.indent || 0,
       collapsed: operation.data.collapsed || false,
