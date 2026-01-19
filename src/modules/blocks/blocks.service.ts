@@ -507,6 +507,11 @@ export class BlocksService {
       throw new NotFoundException('块不存在');
     }
 
+    // 检查块是否已被删除
+    if (block.isDeleted) {
+      throw new NotFoundException('块已被删除，无法查看历史记录');
+    }
+
     // 检查文档权限
     await this.documentsService.findOne(block.docId, userId);
 
