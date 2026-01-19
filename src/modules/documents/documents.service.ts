@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Document } from '../../entities/document.entity';
 import { Block } from '../../entities/block.entity';
 import { BlockVersion } from '../../entities/block-version.entity';
@@ -563,6 +563,12 @@ export class DocumentsService {
     // 获取该文档版本对应的块版本映射
     const blockVersionMap = await this.getBlockVersionMapForVersion(docId, docVer);
 
+    // 调试信息
+    console.log('getContent - docId:', docId, 'docVer:', docVer);
+    console.log('getContent - rootBlockId:', document.rootBlockId);
+    console.log('getContent - blockVersionMap keys:', Object.keys(blockVersionMap));
+    console.log('getContent - rootBlockId in map:', document.rootBlockId in blockVersionMap);
+
     // 根据块版本映射构建完整的内容树
     const tree = await this.buildContentTreeFromVersionMap(
       docId,
@@ -571,7 +577,19 @@ export class DocumentsService {
     );
 
     if (!tree) {
+      console.error('buildContentTreeFromVersionMap returned null');
+      console.error('blockVersionMap:', blockVersionMap);
       throw new NotFoundException('文档版本不存在');
+    }
+
+    // 检查根块是否被删除
+    if (tree && typeof tree === 'object' && '__rootBlockDeleted' in tree) {
+      throw new BadRequestException('根块已被删除，无法获取文档内容。请恢复根块或重新创建文档。');
+    }
+
+    // 检查根块是否不存在
+    if (tree && typeof tree === 'object' && '__rootBlockMissing' in tree) {
+      throw new NotFoundException('根块不存在，无法获取文档内容。');
     }
 
     return {
@@ -880,8 +898,19 @@ export class DocumentsService {
       throw new NotFoundException(`修订版本 ${docVer} 不存在`);
     }
 
+    // 获取文档信息，包含根块ID
+    const document = await this.documentRepository.findOne({
+      where: { docId },
+      select: ['rootBlockId'],
+    });
+    if (!document) {
+      throw new NotFoundException(`文档 ${docId} 不存在`);
+    }
+
+    // 查询块版本映射，排除已删除的块
     const rows = await this.blockVersionRepository
       .createQueryBuilder('bv')
+      .innerJoin(Block, 'b', 'bv.blockId = b.blockId AND b.isDeleted = false')
       .select('bv.blockId', 'blockId')
       .addSelect('MAX(bv.ver)', 'maxVer')
       .where('bv.docId = :docId', { docId })
@@ -893,6 +922,47 @@ export class DocumentsService {
     for (const r of rows) {
       map[r.blockId] = typeof r.maxVer === 'string' ? parseInt(r.maxVer, 10) : r.maxVer;
     }
+
+    // 确保根块在版本映射中（根块不应该被删除）
+    if (document.rootBlockId && !(document.rootBlockId in map)) {
+      console.log('根块不在版本映射中，尝试添加，rootBlockId:', document.rootBlockId);
+      
+      // 查询根块的最新版本
+      const rootBlock = await this.blockRepository.findOne({
+        where: { docId, blockId: document.rootBlockId },
+      });
+      
+      console.log('根块查询结果:', rootBlock ? { blockId: rootBlock.blockId, isDeleted: rootBlock.isDeleted, latestVer: rootBlock.latestVer } : 'null');
+      
+      if (rootBlock && !rootBlock.isDeleted) {
+        // 查找根块在该时间点之前的版本
+        const rootVersion = await this.blockVersionRepository
+          .createQueryBuilder('bv')
+          .where('bv.docId = :docId', { docId })
+          .andWhere('bv.blockId = :blockId', { blockId: document.rootBlockId })
+          .andWhere('bv.createdAt <= :createdAt', { createdAt: revision.createdAt })
+          .orderBy('bv.ver', 'DESC')
+          .limit(1)
+          .getOne();
+        
+        console.log('根块版本查询结果:', rootVersion ? { blockId: rootVersion.blockId, ver: rootVersion.ver, createdAt: rootVersion.createdAt } : 'null');
+        console.log('revision.createdAt:', revision.createdAt);
+        
+        if (rootVersion) {
+          map[document.rootBlockId] = rootVersion.ver;
+          console.log('已添加根块到版本映射:', document.rootBlockId, 'ver:', rootVersion.ver);
+        } else {
+          // 如果根块没有版本记录，使用 latestVer（这种情况不应该发生，但作为后备）
+          map[document.rootBlockId] = rootBlock.latestVer;
+          console.log('根块没有版本记录，使用 latestVer:', rootBlock.latestVer);
+        }
+      } else {
+        console.error('根块不存在或已被删除');
+      }
+    } else {
+      console.log('根块已在版本映射中:', document.rootBlockId in map);
+    }
+
     return map;
   }
 
@@ -904,7 +974,20 @@ export class DocumentsService {
     rootBlockId: string,
     blockVersionMap: Record<string, number>,
   ): Promise<any> {
-    if (!(rootBlockId in blockVersionMap)) return null;
+    if (!(rootBlockId in blockVersionMap)) {
+      // 检查根块是否存在以及是否被删除
+      const rootBlock = await this.blockRepository.findOne({
+        where: { docId, blockId: rootBlockId },
+      });
+      if (!rootBlock) {
+        return { __rootBlockMissing: true };
+      }
+      if (rootBlock.isDeleted) {
+        return { __rootBlockDeleted: true };
+      }
+      // 根块存在但不在版本映射中，返回 null（这种情况不应该发生）
+      return null;
+    }
 
     const entries = Object.entries(blockVersionMap).map(([blockId, ver]) => ({
       blockId,
@@ -912,9 +995,62 @@ export class DocumentsService {
     }));
     if (entries.length === 0) return null;
 
-    const versions = await this.blockVersionRepository.find({
-      where: entries.map((e) => ({ docId, blockId: e.blockId, ver: e.ver })),
+    // 查询块版本，同时过滤已删除的块
+    // 先单独检查根块（根块不应该被删除）
+    const rootBlock = await this.blockRepository.findOne({
+      where: { docId, blockId: rootBlockId },
     });
+    
+    if (!rootBlock) {
+      console.error('根块不存在，rootBlockId:', rootBlockId);
+      return { __rootBlockMissing: true };
+    }
+    
+    if (rootBlock.isDeleted) {
+      console.error('根块已被删除，rootBlockId:', rootBlockId);
+      return { __rootBlockDeleted: true };
+    }
+    
+    // 查询非根块的有效块ID列表
+    const nonRootEntries = entries.filter((e) => e.blockId !== rootBlockId);
+    const nonRootBlockIds = nonRootEntries.map((e) => e.blockId);
+    
+    let validBlockIds = new Set<string>([rootBlockId]); // 根块始终有效
+    
+    if (nonRootBlockIds.length > 0) {
+      const validBlocks = await this.blockRepository.find({
+        where: {
+          docId,
+          isDeleted: false,
+          blockId: In(nonRootBlockIds) as any,
+        },
+        select: ['blockId'],
+      });
+      for (const b of validBlocks) {
+        validBlockIds.add(b.blockId);
+      }
+    }
+
+    // 只查询有效块的版本（包括根块）
+    const validEntries = entries.filter((e) => validBlockIds.has(e.blockId));
+    
+    // 确保根块在查询列表中
+    if (!validEntries.find((e) => e.blockId === rootBlockId)) {
+      const rootVer = blockVersionMap[rootBlockId];
+      if (rootVer) {
+        validEntries.unshift({ blockId: rootBlockId, ver: rootVer });
+      }
+    }
+    
+    if (validEntries.length === 0) {
+      console.error('validEntries 为空，但根块应该存在');
+      return null;
+    }
+
+    const versions = await this.blockVersionRepository.find({
+      where: validEntries.map((e) => ({ docId, blockId: e.blockId, ver: e.ver })),
+    });
+
     const byBlock = new Map<string, typeof versions[0]>();
     for (const v of versions) byBlock.set(v.blockId, v);
 
