@@ -43,7 +43,7 @@ Content-Type: application/json
   "cover": "https://example.com/cover.jpg",
   "visibility": "workspace",
   "parentId": null,
-  "tags": ["示例", "测试"],
+  "tags": ["tag_1234567890_abc123", "tag_1234567890_def456"],
   "category": "技术文档"
 }
 ```
@@ -58,7 +58,7 @@ Content-Type: application/json
 | `cover` | string | ❌ | 文档封面URL，最多500个字符 |
 | `visibility` | string | ❌ | 可见性：`private`（默认）、`workspace`、`public` |
 | `parentId` | string | ❌ | 父文档ID（用于文档树结构） |
-| `tags` | string[] | ❌ | 标签列表 |
+| `tags` | string[] | ❌ | 标签ID列表（tagId数组），系统会自动校验标签是否存在并更新使用统计 |
 | `category` | string | ❌ | 分类，最多50个字符 |
 
 **响应示例：**
@@ -75,7 +75,7 @@ Content-Type: application/json
     "publishedHead": 0,
     "status": "draft",
     "visibility": "workspace",
-    "tags": ["示例", "测试"],
+    "tags": ["tag_1234567890_abc123", "tag_1234567890_def456"],
     "category": "技术文档",
     "createdAt": "2024-01-15T10:30:00.000Z"
   }
@@ -86,6 +86,9 @@ Content-Type: application/json
 - 创建文档时会**自动创建根块**（`rootBlockId`），无需手动创建
 - 创建文档时会**自动创建初始版本**（`head = 1`）
 - 如果指定了 `parentId`，父文档必须属于同一工作空间
+- **标签字段**：`tags` 字段应传入**标签ID**（tagId）数组，不是标签名称
+  - 系统会自动校验标签ID是否存在，不存在会返回错误
+  - 标签的 `usageCount` 会自动更新（+1）
 
 **状态码：**
 - `201 Created` - 创建成功
@@ -111,7 +114,7 @@ Authorization: Bearer <your-access-token>
 | `status` | string | ❌ | 文档状态：`draft`、`normal`、`archived` |
 | `visibility` | string | ❌ | 可见性：`private`、`workspace`、`public` |
 | `parentId` | string | ❌ | 父文档ID（用于查询子文档） |
-| `tags` | string[] | ❌ | 标签过滤（数组） |
+| `tags` | string[] | ❌ | 标签ID过滤（tagId数组），查询包含指定标签的文档 |
 | `category` | string | ❌ | 分类过滤 |
 | `sortBy` | string | ❌ | 排序字段：`updatedAt`（默认）、`createdAt`、`title` |
 | `sortOrder` | string | ❌ | 排序顺序：`DESC`（默认）、`ASC` |
@@ -161,7 +164,7 @@ Authorization: Bearer <your-access-token>
 | `query` | string | ✅ | 搜索关键词 |
 | `workspaceId` | string | ❌ | 工作空间ID |
 | `status` | string | ❌ | 文档状态：`draft`、`normal`、`archived` |
-| `tags` | string[] | ❌ | 标签过滤 |
+| `tags` | string[] | ❌ | 标签ID过滤（tagId数组），搜索包含指定标签的文档 |
 | `page` | number | ❌ | 页码，默认 1 |
 | `pageSize` | number | ❌ | 每页数量，默认 20 |
 
@@ -226,7 +229,7 @@ Authorization: Bearer <your-access-token>
     "publishedHead": 3,
     "status": "normal",
     "visibility": "workspace",
-    "tags": ["示例", "测试"],
+    "tags": ["tag_1234567890_abc123", "tag_1234567890_def456"],
     "category": "技术文档",
     "viewCount": 10,
     "favoriteCount": 2,
@@ -245,7 +248,7 @@ Authorization: Bearer <your-access-token>
 
 **接口：** `GET /api/v1/documents/:docId/content`
 
-**说明：** 获取文档的内容树（渲染树），可以指定版本
+**说明：** 获取文档的内容树（渲染树），支持分页加载，适用于超大型文档
 
 **请求头：**
 ```
@@ -263,6 +266,9 @@ Authorization: Bearer <your-access-token>
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `version` | number | ❌ | 文档版本号（不传则使用最新版本 `head`） |
+| `maxDepth` | number | ❌ | 最大层级深度（从根块开始计算，0=只返回根块，1=根块+第一层，默认返回所有层级） |
+| `startBlockId` | string | ❌ | 起始块ID（用于分页，返回该块及其后续兄弟块） |
+| `limit` | number | ❌ | 每页返回的最大块数量（默认1000，最大10000） |
 
 **响应示例：**
 ```json
@@ -279,6 +285,10 @@ Authorization: Bearer <your-access-token>
         "type": "root",
         "children": []
       },
+      "parentId": "",
+      "sortKey": "0",
+      "indent": 0,
+      "collapsed": false,
       "children": [
         {
           "blockId": "b_1705123456790_block001",
@@ -286,18 +296,57 @@ Authorization: Bearer <your-access-token>
           "payload": {
             "text": "这是第一段内容"
           },
-          "version": 1
+          "parentId": "b_1705123456789_root789",
+          "sortKey": "1000000",
+          "indent": 0,
+          "collapsed": false,
+          "children": []
         }
       ]
+    },
+    "pagination": {
+      "totalBlocks": 1500,
+      "returnedBlocks": 1000,
+      "hasMore": true,
+      "nextStartBlockId": "b_1705123456800_block1000"
     }
   }
 }
 ```
 
+**字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `tree` | object | 文档内容树（根块及其子块） |
+| `pagination.totalBlocks` | number | 文档中的总块数 |
+| `pagination.returnedBlocks` | number | 本次返回的块数量 |
+| `pagination.hasMore` | boolean | 是否还有更多块未返回 |
+| `pagination.nextStartBlockId` | string | 下次请求的起始块ID（当 hasMore 为 true 时） |
+
+**分页使用说明：**
+- **按需加载**：对于超大型文档，建议使用 `maxDepth` 和 `limit` 参数控制返回的数据量
+- **层级加载**：使用 `maxDepth=0` 只获取根块，然后按需加载子块
+- **分页加载**：当 `hasMore=true` 时，使用 `nextStartBlockId` 作为 `startBlockId` 参数继续获取后续内容
+- **性能优化**：默认 `limit=1000`，可根据前端渲染能力调整（建议不超过5000）
+
+**使用示例：**
+```typescript
+// 1. 首次加载：只加载前2层，最多100个块
+GET /api/v1/documents/doc_123/content?maxDepth=1&limit=100
+
+// 2. 继续加载：从指定块开始加载后续内容
+GET /api/v1/documents/doc_123/content?startBlockId=b_xxx&limit=100
+
+// 3. 加载完整文档（不推荐用于超大型文档）
+GET /api/v1/documents/doc_123/content
+```
+
 **说明：**
-- `tree` 包含根块及其所有子块的树形结构
+- `tree` 包含根块及其子块的树形结构
 - 如果不指定 `version`，返回最新版本（`head`）的内容
 - 如果指定 `version`，返回该版本的内容（基于时间点计算）
+- **分页功能**：系统针对超大型文档优化，支持按层级和数量分页，避免一次性返回过多数据
 
 **状态码：**
 - `200 OK` - 获取成功
@@ -308,7 +357,7 @@ Authorization: Bearer <your-access-token>
 
 **接口：** `PATCH /api/v1/documents/:docId`
 
-**说明：** 更新文档的标题、图标、标签等元数据
+**说明：** 更新文档的标题、图标、标签等元数据。更新标签时会自动校验标签ID并更新使用统计。
 
 **请求头：**
 ```
@@ -327,7 +376,7 @@ Content-Type: application/json
 {
   "title": "更新后的标题",
   "icon": "📝",
-  "tags": ["新标签1", "新标签2"],
+  "tags": ["tag_1234567890_abc123", "tag_1234567890_def456"],
   "visibility": "public"
 }
 ```
@@ -340,7 +389,7 @@ Content-Type: application/json
 | `icon` | string | ❌ | 文档图标（emoji），最多10个字符 |
 | `cover` | string | ❌ | 文档封面URL，最多500个字符 |
 | `visibility` | string | ❌ | 可见性：`private`、`workspace`、`public` |
-| `tags` | string[] | ❌ | 标签列表 |
+| `tags` | string[] | ❌ | 标签ID列表（tagId数组），系统会自动校验标签是否存在并更新使用统计 |
 | `category` | string | ❌ | 分类，最多50个字符 |
 | `status` | string | ❌ | 文档状态：`draft`、`normal`、`archived` |
 
@@ -542,7 +591,7 @@ Authorization: Bearer <your-access-token>
 }
 ```
 
-### 版本对比
+### 版本对比 <Badge type="danger" text="BUG" />
 
 **接口：** `GET /api/v1/documents/:docId/diff`
 
@@ -575,7 +624,7 @@ Authorization: Bearer <your-access-token>
 }
 ```
 
-### 回滚到指定版本
+### 回滚到指定版本 <Badge type="danger" text="BUG" />
 
 **接口：** `POST /api/v1/documents/:docId/revert`
 
@@ -618,7 +667,7 @@ Content-Type: application/json
 }
 ```
 
-### 创建快照
+### 创建快照 <Badge type="danger" text="BUG" />
 
 **接口：** `POST /api/v1/documents/:docId/snapshots`
 

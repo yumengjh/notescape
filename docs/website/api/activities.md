@@ -1,4 +1,4 @@
-# 活动日志 API
+# 活动日志 API <Badge type="warning" text="beta" />
 
 活动日志模块提供用户活动日志查询功能。
 

@@ -12,13 +12,15 @@ export default defineConfig({
   ],
   
   themeConfig: {
+    returnToTopLabel: '返回顶部',
+    sidebarMenuLabel: '菜单',
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: '首页', link: '/' },
       { text: '快速开始', link: '/guide/getting-started' },
       { text: 'API 文档', link: '/api/overview' },
       // { text: '工作流', link: '/workflow/document-workflow' },
-      // { text: '设计文档', link: '/design/api-design' }
+      { text: '设计文档', link: '/design' }
     ],
 
     sidebar: {
@@ -80,7 +82,10 @@ export default defineConfig({
         {
           text: '设计文档',
           items: [
-       
+            { text: '数据结构设计', link: '/design/data-structure-design' },
+            { text: '文档块工作机制', link: '/design/block-mechanism' },
+            { text: '块移动操作指南', link: '/design/block-movement-guide' },
+            { text: '块树构建算法', link: '/design/document-content-pagination' }
           ]
         }
       ],
@@ -97,7 +102,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com' }
+      { icon: 'github', link: 'https://github.com/yumengjh/notescape-server' }
     ],
 
     search: {
@@ -126,11 +131,11 @@ export default defineConfig({
 
     footer: {
       message: '基于 NestJS 构建的个人知识库后端系统',
-      copyright: 'Copyright © 2024'
+      copyright: 'Copyright © 2026 yumengjh'
     },
 
     editLink: {
-      pattern: '',
+      pattern: 'https://github.com/yumengjh/notescape-server/edit/main/docs/website/:path',
       text: '在 GitHub 上编辑此页'
     },
 
@@ -148,7 +153,8 @@ export default defineConfig({
     },
 
     outline: {
-      label: '页面导航'
+      label: '页面导航',
+      level:'deep'
     }
   }
 })

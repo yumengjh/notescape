@@ -1,4 +1,4 @@
-# 搜索 API
+# 搜索 API <Badge type="warning" text="beta" />
 
 搜索模块提供全局搜索和高级搜索功能。
 

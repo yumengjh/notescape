@@ -1,4 +1,4 @@
-# 安全 API
+# 安全 API <Badge type="warning" text="beta" />
 
 安全模块提供安全日志和审计日志查询功能。
 

@@ -34,7 +34,7 @@ Content-Type: application/json
     "text": "这是第一段内容"
   },
   "parentId": "b_root_123",
-  "sortKey": "1",
+  "sortKey": "500000",
   "indent": 0,
   "collapsed": false,
   "createVersion": true
@@ -49,10 +49,98 @@ Content-Type: application/json
 | `type` | string | ✅ | 块类型，如 `paragraph`、`heading`、`list` 等 |
 | `payload` | object | ✅ | 块的实际内容，JSON 格式，根据块类型不同而不同 |
 | `parentId` | string | ❌ | 父块ID，不传或为空字符串时，块会挂到根块下 |
-| `sortKey` | string | ❌ | 排序键，用于块的位置排序，如 `"1"`、`"2"`、`"0.5"` |
+| `sortKey` | string | ❌ | 排序键，用于块的位置排序（详见下方说明） |
 | `indent` | number | ❌ | 缩进级别，默认 0 |
 | `collapsed` | boolean | ❌ | 是否折叠，默认 false |
 | `createVersion` | boolean | ❌ | 是否立即创建文档版本，默认 `true` |
+
+### sortKey 字段详解
+
+`sortKey` 是一个**数字字符串**，用于确定块在同级块中的显示顺序。系统通过数字比较来确定块的顺序：
+- 数字越小，位置越靠前
+- 数字越大，位置越靠后
+
+#### ⚠️ 重要提示
+
+**强烈建议：创建块时不要手动传入 `sortKey`！**
+
+**原因：**
+1. **自动生成更可靠**：系统会根据同级块的位置自动生成合适的 `sortKey`，确保新块出现在最后
+2. **避免冲突**：手动传入小的值（如 `"0"`, `"1"`, `"2"`）容易导致多个块使用相同的 `sortKey`
+3. **空间不足**：小的 `sortKey` 值之间没有足够的空间，后续插入新块时会遇到问题
+4. **排序不稳定**：多个块使用相同或接近的 `sortKey` 会导致排序不稳定
+
+#### sortKey 的取值范围
+
+- **推荐范围**：`100000` 到 `900000` 之间，间隔至少 `100000`
+- **默认值**：如果不传 `sortKey`，系统会自动生成（通常为 `500000` 或基于同级块计算）
+- **不推荐**：`0` 到 `10000` 之间的小值（如 `"0"`, `"1"`, `"2"`）
+
+#### 自动生成规则
+
+如果不传 `sortKey`，系统会：
+1. 查询同级块（相同 `parentId`）的最新版本
+2. 按 `sortKey` 排序，获取最后一个同级块的 `sortKey`
+3. 生成比最后一个更大的 `sortKey`（增加 `100000`），确保新块出现在最后
+
+**示例：**
+```javascript
+// ✅ 推荐：不传 sortKey，让系统自动生成
+{
+  "docId": "doc_123",
+  "type": "paragraph",
+  "payload": { "text": "新段落" }
+  // 不传 sortKey，系统会自动生成
+}
+
+// ✅ 可以：传入大间隔的值（如果需要精确控制位置）
+{
+  "docId": "doc_123",
+  "type": "paragraph",
+  "payload": { "text": "新段落" },
+  "sortKey": "500000"  // 大间隔值，可以
+}
+
+// ❌ 不推荐：传入小的值
+{
+  "docId": "doc_123",
+  "type": "paragraph",
+  "payload": { "text": "新段落" },
+  "sortKey": "1"  // 太小，不推荐
+}
+
+// ❌ 错误：多个块使用相同的 sortKey
+// 块1: sortKey = "1"
+// 块2: sortKey = "1"  // 相同值，会导致排序不稳定
+```
+
+#### 最佳实践
+
+1. **创建块时**：
+   - ✅ **不传 `sortKey`**：让系统自动生成（推荐）
+   - ✅ **不传 `parentId`**：让块自动挂到根块下
+   - ❌ **不要传小的 `sortKey` 值**（如 `"0"`, `"1"`, `"2"`）
+   - ❌ **不要多个块使用相同的 `sortKey`**
+
+2. **批量创建块时**：
+   ```javascript
+   // ✅ 好的做法：不传 sortKey，让系统自动生成
+   const blocks = [
+     { type: "paragraph", payload: { text: "段落1" } },
+     { type: "paragraph", payload: { text: "段落2" } },
+     { type: "paragraph", payload: { text: "段落3" } }
+   ];
+   
+   // 每个块都会自动获得合适的 sortKey
+   ```
+
+3. **如果需要精确控制位置**：
+   - 先获取文档内容，查看现有块的 `sortKey`
+   - 使用大间隔的值（至少 `100000` 的间隔）
+   - 或者使用移动接口（`POST /api/v1/blocks/:blockId/move`）来调整位置
+
+**相关文档：**
+- 详细了解 sortKey 的使用方法，请参考 [块移动操作指南](../../design/block-movement-guide.md)
 
 **响应示例：**
 ```json
@@ -72,6 +160,7 @@ Content-Type: application/json
 
 **重要说明：**
 - 如果 `parentId` 不传或为空字符串，块会挂到根块（`rootBlockId`）下
+- **强烈建议不传 `sortKey`**，让系统自动生成，避免排序问题
 - `createVersion` 默认为 `true`，设置为 `false` 时不会立即创建文档版本（用于批量操作或快速输入场景）
 
 **状态码：**
@@ -327,9 +416,8 @@ Content-Type: application/json
       "data": {
         "docId": "doc_1705123456789_xyz456",
         "type": "paragraph",
-        "payload": { "text": "新段落" },
-        "parentId": "b_root_123",
-        "sortKey": "1"
+        "payload": { "text": "新段落" }
+        // 不传 parentId 和 sortKey，系统会自动处理
       }
     },
     {
@@ -371,9 +459,8 @@ Content-Type: application/json
      "data": {
        "docId": "...",
        "type": "paragraph",
-       "payload": { ... },
-       "parentId": "...",
-       "sortKey": "1"
+       "payload": { ... }
+       // 不传 parentId 和 sortKey，系统会自动处理
      }
    }
    ```
@@ -499,8 +586,8 @@ async function createBlock(docId: string) {
       docId,
       type: 'paragraph',
       payload: { text: '新段落' },
-      parentId: 'b_root_123',
-      sortKey: '1',
+      // 不传 parentId，块会自动挂到根块下
+      // 不传 sortKey，系统会自动生成合适的值
     }),
   });
   return await response.json();

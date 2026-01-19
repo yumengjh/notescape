@@ -1,4 +1,4 @@
-# 资产 API
+# 资产 API <Badge type="warning" text="beta" />
 
 资产模块提供文件上传和管理功能。
 
@@ -51,8 +51,21 @@ Content-Type: multipart/form-data
 ```
 
 **存储说明：**
-- 文件存储在本地：`uploads/workspaces/{workspaceId}/`
-- 访问 URL：`/api/v1/assets/:assetId/file`
+- **文件存储位置**：文件存储在项目根目录下的 `uploads` 文件夹中
+- **完整路径格式**：`{项目根目录}/uploads/workspaces/{workspaceId}/{assetId}_{原文件名}`
+- **示例**：如果项目在 `f:\doc-back\app`，文件会保存在：
+  ```
+  f:\doc-back\app\uploads\workspaces\ws_1768727797090_8cd3e252\asset_1768823084902_6851d19c_tom.jpg
+  ```
+- **访问 URL**：`/api/v1/assets/:assetId/file`
+- **配置**：
+  - 默认上传目录：`uploads`（项目根目录下）
+  - 可通过环境变量 `UPLOAD_DIR` 自定义上传目录
+  - `uploads` 目录会被 git 忽略（在 `.gitignore` 中）
+- **注意事项**：
+  - 上传成功后，服务器控制台会输出文件保存的完整路径
+  - 如果找不到文件，请检查项目根目录下的 `uploads` 文件夹
+  - 确保应用有写入权限
 
 **状态码：**
 - `201 Created` - 上传成功
