@@ -1088,6 +1088,10 @@ export class DocumentsService {
         blockId: bv.blockId,
         type: (bv.payload as any)?.type || 'paragraph',
         payload: bv.payload,
+        parentId: bv.parentId,
+        sortKey: bv.sortKey || '500000',
+        indent: bv.indent || 0,
+        collapsed: bv.collapsed || false,
         children,
       };
     };
