@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Favorite } from '../../entities/favorite.entity';
 import { Document } from '../../entities/document.entity';
 import { DocumentsService } from '../documents/documents.service';
@@ -35,7 +35,7 @@ export class FavoritesService {
       throw new ConflictException('已经收藏过该文档');
     }
 
-    await this.favoriteRepository.save(
+    const favorite = await this.favoriteRepository.save(
       this.favoriteRepository.create({ userId, docId: dto.docId }),
     );
 
@@ -46,7 +46,7 @@ export class FavoritesService {
       await this.activitiesService.record(doc.workspaceId, FAVORITE_ACTIONS.CREATE, 'favorite', dto.docId, userId, { docId: dto.docId });
     }
 
-    return { message: '收藏成功', docId: dto.docId };
+    return favorite;
   }
 
   /** 取消收藏 */
@@ -68,21 +68,20 @@ export class FavoritesService {
     return { message: '已取消收藏', docId };
   }
 
-  /** 获取当前用户的收藏列表（含文档信息，排除已删除文档） */
+  /** 获取当前用户的收藏列表（只返回收藏记录，不包含文档详情） */
   async findAll(queryDto: QueryFavoritesDto, userId: string) {
     const { page = 1, pageSize = 20 } = queryDto;
     const skip = (page - 1) * pageSize;
 
-    const qb = this.favoriteRepository
-      .createQueryBuilder('f')
-      .innerJoinAndSelect('f.document', 'd')
-      .where('f.userId = :userId', { userId })
-      .andWhere('d.status != :deleted', { deleted: 'deleted' })
-      .orderBy('f.createdAt', 'DESC')
-      .skip(skip)
-      .take(pageSize);
+    const [favorites, total] = await this.favoriteRepository.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: pageSize,
+    });
 
-    const [items, total] = await qb.getManyAndCount();
+    // 移除 userId 字段，用户已经知道自己的身份
+    const items = favorites.map(({ userId: _, ...rest }) => rest);
 
     return { items, total, page, pageSize };
   }
