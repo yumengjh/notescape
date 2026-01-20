@@ -139,9 +139,6 @@ Content-Type: application/json
    - 使用大间隔的值（至少 `100000` 的间隔）
    - 或者使用移动接口（`POST /api/v1/blocks/:blockId/move`）来调整位置
 
-**相关文档：**
-- 详细了解 sortKey 的使用方法，请参考 [块移动操作指南](../../design/block-movement-guide.md)
-
 **响应示例：**
 ```json
 {

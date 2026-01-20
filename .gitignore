@@ -18,3 +18,5 @@ dist-ssr
 uploads/
 
 cache/
+
+dist-bundle/
