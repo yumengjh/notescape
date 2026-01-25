@@ -73,17 +73,30 @@ new DocumentEngine(storage: Storage, opts?: { snapshotEvery?: number });
   支持 patch: `title | status | visibility | publishedHead`（publishedHead 不可超过 head）。
 
 ### 块（Block）
-- `createBlock({ docId, type, createdBy, parentId?, afterBlockId?, beforeBlockId?, payload, indent? })`  
+- `createBlock({ docId, type, createdBy, parentId?, afterBlockId?, beforeBlockId?, payload, indent?, createVersion? })`  
   在 parent 下按 `sortKey` 插入；未指定 parent 默认 root；传 after/before 控制位置。返回 `{ block, version }`。
+  
+  - `createVersion`：默认 `true`。
+    - `true`：立即生成 doc revision（docVer +1）。
+    - `false`：仅写入块 identity/version，并将变更累积到引擎内存中的 pending 队列，需后续调用 `commitPending()` 才会生成 doc revision。
 
-- `updateBlockContent({ docId, blockId, updatedBy, payload })` -> `BlockVersion`  
-  生成新版本，更新 block.latestVer，提交 doc revision。
+- `updateBlockContent({ docId, blockId, updatedBy, payload, createVersion? })` -> `BlockVersion`  
+  生成新版本并更新 block.latestVer。
+  
+  - `createVersion=true`（默认）：立即提交 doc revision。
+  - `createVersion=false`：累积到 pending 队列，等待 `commitPending()`。
 
-- `moveBlock({ docId, blockId, movedBy, toParentId, afterBlockId?, beforeBlockId?, indent? })` -> `BlockVersion`  
-  变更 parent/sortKey/indent，生成新版本与 revision。
+- `moveBlock({ docId, blockId, movedBy, toParentId, afterBlockId?, beforeBlockId?, indent?, createVersion? })` -> `BlockVersion`  
+  变更 parent/sortKey/indent，生成新版本。
+  
+  - `createVersion=true`（默认）：立即提交 doc revision。
+  - `createVersion=false`：累积到 pending 队列，等待 `commitPending()`。
 
-- `deleteBlock({ docId, blockId, deletedBy })`  
-  逻辑删除（标记 isDeleted=true），仍生成 doc revision。
+- `deleteBlock({ docId, blockId, deletedBy, createVersion? })`  
+  逻辑删除（标记 isDeleted=true）。
+  
+  - `createVersion=true`（默认）：立即生成 doc revision。
+  - `createVersion=false`：记录为 pending（用于批量提交场景）。对接后端时服务端可能仍会强制删除立即生成版本，以服务端行为为准。
 
 - `updateBlockAuthor({ docId, blockId, updatedBy, setCreatedBy? })` -> `BlockIdentity`  
   变更作者元数据，生成 doc revision（无版本变更）。

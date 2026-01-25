@@ -51,6 +51,12 @@ export class DocumentEngine {
   private readonly storage: Storage;
   private readonly opts: EngineOptions;
 
+  /**
+   * In-memory pending patches (NOT persisted).
+   * Used to batch local commits and to mirror server-side pending-versions/commit behavior.
+   */
+  private readonly pendingPatches = new Map<DocID, Map<BlockID, DocRevisionPatch>>();
+
   constructor(storage: Storage, opts: EngineOptions = {}) {
     this.storage = storage;
     this.opts = opts;
@@ -198,6 +204,8 @@ export class DocumentEngine {
     beforeBlockId?: BlockID | null; // or before this sibling
     payload: BlockPayloadBase;
     indent?: number;
+    /** default true. When false, changes are accumulated in-memory and require commitPending(). */
+    createVersion?: boolean;
   }): Promise<{ block: BlockIdentity; version: BlockVersion }> {
     const doc = await this.mustGetDoc(params.docId);
     const now = this.now();
@@ -240,11 +248,16 @@ export class DocumentEngine {
     await this.storage.saveBlock(identity);
     await this.storage.saveBlockVersion(version);
 
-    // commit doc revision
-    await this.commit(params.docId, params.createdBy, {
-      message: `create block ${blockId}`,
-      patches: [{ blockId, from: 0 as any, to: 1 }],
-    });
+    const patch: DocRevisionPatch = { blockId, from: 0 as any, to: 1 };
+    if (params.createVersion === false) {
+      this.addPendingPatch(params.docId, patch);
+    } else {
+      // commit doc revision
+      await this.commit(params.docId, params.createdBy, {
+        message: `create block ${blockId}`,
+        patches: [patch],
+      });
+    }
 
     return { block: identity, version };
   }
@@ -254,6 +267,8 @@ export class DocumentEngine {
     blockId: BlockID;
     updatedBy: UserID;
     payload: BlockPayloadBase;
+    /** default true. When false, changes are accumulated in-memory and require commitPending(). */
+    createVersion?: boolean;
   }): Promise<BlockVersion> {
     const block = await this.mustGetBlock(params.blockId);
     if (block.docId !== params.docId) throw new Error("Block does not belong to doc");
@@ -290,10 +305,15 @@ export class DocumentEngine {
       latestBy: params.updatedBy,
     });
 
-    await this.commit(params.docId, params.updatedBy, {
-      message: `update content ${params.blockId}`,
-      patches: [{ blockId: params.blockId, from: latest.ver, to: nextVer }],
-    });
+    const patch: DocRevisionPatch = { blockId: params.blockId, from: latest.ver, to: nextVer };
+    if (params.createVersion === false) {
+      this.addPendingPatch(params.docId, patch);
+    } else {
+      await this.commit(params.docId, params.updatedBy, {
+        message: `update content ${params.blockId}`,
+        patches: [patch],
+      });
+    }
 
     return next;
   }
@@ -306,6 +326,8 @@ export class DocumentEngine {
     afterBlockId?: BlockID | null;
     beforeBlockId?: BlockID | null;
     indent?: number;
+    /** default true. When false, changes are accumulated in-memory and require commitPending(). */
+    createVersion?: boolean;
   }): Promise<BlockVersion> {
     const block = await this.mustGetBlock(params.blockId);
     if (block.docId !== params.docId) throw new Error("Block does not belong to doc");
@@ -343,16 +365,27 @@ export class DocumentEngine {
       latestBy: params.movedBy,
     });
 
-    await this.commit(params.docId, params.movedBy, {
-      message: `move ${params.blockId}`,
-      patches: [{ blockId: params.blockId, from: latest.ver, to: nextVer }],
-      opSummary: { moved: 1 },
-    });
+    const patch: DocRevisionPatch = { blockId: params.blockId, from: latest.ver, to: nextVer };
+    if (params.createVersion === false) {
+      this.addPendingPatch(params.docId, patch);
+    } else {
+      await this.commit(params.docId, params.movedBy, {
+        message: `move ${params.blockId}`,
+        patches: [patch],
+        opSummary: { moved: 1 },
+      });
+    }
 
     return next;
   }
 
-  async deleteBlock(params: { docId: DocID; blockId: BlockID; deletedBy: UserID }) {
+  async deleteBlock(params: {
+    docId: DocID;
+    blockId: BlockID;
+    deletedBy: UserID;
+    /** default true. When false, changes are accumulated in-memory and require commitPending(). */
+    createVersion?: boolean;
+  }) {
     const block = await this.mustGetBlock(params.blockId);
     if (block.docId !== params.docId) throw new Error("Block does not belong to doc");
     const now = this.now();
@@ -365,12 +398,18 @@ export class DocumentEngine {
       latestBy: params.deletedBy,
     });
 
-    // create a revision even for delete (so docVer changes)
-    await this.commit(params.docId, params.deletedBy, {
-      message: `delete ${params.blockId}`,
-      patches: [], // deletion is identity-level; you can also create a tombstone version if you prefer
-      opSummary: { deleted: 1 },
-    });
+    if (params.createVersion === false) {
+      // Keep behavior consistent with "pending" mode: identity-level deletions are tracked as a no-op patch.
+      // (Server side usually always versions deletions; remote adapter can ignore createVersion=false for delete.)
+      this.addPendingPatch(params.docId, { blockId: params.blockId, from: block.latestVer, to: block.latestVer });
+    } else {
+      // create a revision even for delete (so docVer changes)
+      await this.commit(params.docId, params.deletedBy, {
+        message: `delete ${params.blockId}`,
+        patches: [], // deletion is identity-level; you can also create a tombstone version if you prefer
+        opSummary: { deleted: 1 },
+      });
+    }
   }
 
   async updateBlockAuthor(params: { docId: DocID; blockId: BlockID; updatedBy: UserID; setCreatedBy?: UserID }) {
@@ -389,6 +428,50 @@ export class DocumentEngine {
       opSummary: { authorUpdated: 1 },
     });
     return await this.mustGetBlock(params.blockId);
+  }
+
+  // =========================
+  // Pending (in-memory)
+  // =========================
+
+  getPendingVersions(docId: DocID) {
+    const map = this.pendingPatches.get(docId);
+    const pendingCount = map ? map.size : 0;
+    return { pendingCount, hasPending: pendingCount > 0 };
+  }
+
+  async commitPending(docId: DocID, createdBy: UserID, message = "commit") {
+    const map = this.pendingPatches.get(docId);
+    if (!map || map.size === 0) return null;
+
+    const patches = Array.from(map.values());
+
+    // Clear before commit to avoid re-entrancy/double commit.
+    this.pendingPatches.delete(docId);
+
+    return this.commit(docId, createdBy, {
+      message,
+      patches,
+      opSummary: { pendingCommitted: patches.length },
+    });
+  }
+
+  private addPendingPatch(docId: DocID, patch: DocRevisionPatch) {
+    // Coalesce by blockId: keep earliest from, latest to.
+    if (!this.pendingPatches.has(docId)) {
+      this.pendingPatches.set(docId, new Map());
+    }
+    const byBlock = this.pendingPatches.get(docId)!;
+    const existing = byBlock.get(patch.blockId);
+    if (!existing) {
+      byBlock.set(patch.blockId, patch);
+      return;
+    }
+    byBlock.set(patch.blockId, {
+      blockId: patch.blockId,
+      from: existing.from,
+      to: patch.to,
+    });
   }
 
   // =========================
