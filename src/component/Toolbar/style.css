@@ -56,6 +56,52 @@
   /* color: #1890ff; */
 }
 
+/* 对齐下拉面板：横向图标按钮组 */
+.align-dropdown .ant-dropdown-menu {
+  display: none;
+}
+
+.align-menu-panel {
+  /* margin-top: 5px; */
+  padding: 6px;
+  /* border: 1px solid #e7e9e8; */
+  /* border-radius: 10px; */
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); */
+}
+
+.align-menu-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e7e9e8;
+}
+
+.align-menu-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  color: #1f1f1f;
+  line-height: 1;
+}
+
+.align-menu-btn:hover {
+  
+  background: #f5f5f5;
+}
+
+.align-menu-btn.is-active {
+  background: #f5f5f5;
+}
+
 /* .toolbar-button.active .toolbar-icon {
   stroke: #1890ff;
   fill: #1890ff;
@@ -152,6 +198,98 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 标题下拉菜单：仿 Notion 样式（左侧大标题，右侧快捷键提示，当前项打勾） */
+.heading-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  min-width: 200px;
+}
+
+.heading-menu-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.heading-menu-check {
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  color: #1f1f1f;
+}
+
+.heading-menu-label {
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.heading-menu-label.is-body {
+  font-size: 13px;
+}
+
+.heading-menu-label.is-h1 {
+  font-size: 18px;
+}
+
+.heading-menu-label.is-h2 {
+  font-size: 17px;
+}
+
+.heading-menu-label.is-h3 {
+  font-size: 16px;
+}
+
+.heading-menu-label.is-h4 {
+  font-size: 15px;
+}
+
+.heading-menu-label.is-h5 {
+  font-size: 14px;
+}
+
+.heading-menu-label.is-h6 {
+  font-size: 13px;
+}
+
+.heading-menu-shortcut {
+  font-size: 12px;
+  color: #bfbfbf;
+  white-space: nowrap;
+}
+
+/* 字号下拉菜单：紧凑列表 + 当前项打勾 */
+.font-size-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  min-width: 0;
+}
+
+.font-size-menu-check {
+  width: 14px;
+  display: inline-flex;
+  justify-content: center;
+  color: #1f1f1f;
+  flex-shrink: 0;
+}
+
+.font-size-menu-label {
+  font-size: 12px;
+  color: #1f1f1f;
+  white-space: nowrap;
+}
+
+/* 控制下拉菜单滚动高度与宽度（antd dropdown menu） */
+.ant-dropdown .ant-dropdown-menu {
+  overflow-y: auto;
+  min-width: 108px;
 }
 
 .dropdown-caret {

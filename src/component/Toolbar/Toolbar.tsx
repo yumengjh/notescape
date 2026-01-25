@@ -22,7 +22,6 @@ import {
   CodeOutlined,
   DownOutlined,
   BgColorsOutlined,
-  RightOutlined,
 } from "@ant-design/icons";
 import { useDocumentEngineStore } from "../../editor/useDocumentEngineStore";
 import "./style.css";
@@ -35,17 +34,14 @@ type ToolbarItem = {
 };
 
 const titleLevelItems = [
-  "正文",
-  "标题 1",
-  "标题 2",
-  "标题 3",
-  "标题 4",
-  "标题 5",
-  "标题 6",
-].map((level, i) => ({
-  key: `${i}`,
-  label: level,
-}));
+  { key: "0", label: "正文", shortcut: "Alt Ctrl 0", size: "body" as const },
+  { key: "1", label: "标题1", shortcut: "Alt Ctrl 1", size: "h1" as const },
+  { key: "2", label: "标题2", shortcut: "Alt Ctrl 2", size: "h2" as const },
+  { key: "3", label: "标题3", shortcut: "Alt Ctrl 3", size: "h3" as const },
+  { key: "4", label: "标题4", shortcut: "Alt Ctrl 4", size: "h4" as const },
+  { key: "5", label: "标题5", shortcut: "Alt Ctrl 5", size: "h5" as const },
+  { key: "6", label: "标题6", shortcut: "Alt Ctrl 6", size: "h6" as const },
+];
 
 const fontSizeItems = [
   "13px",
@@ -186,7 +182,18 @@ export default function Toolbar() {
       case "underline":
         tiptap.chain().focus().toggleUnderline().run();
         break;
-      // 对齐方式已改为下拉菜单，不再使用 handleClick
+      case "align-left":
+        tiptap.chain().focus().setTextAlign("left").run();
+        break;
+      case "align-center":
+        tiptap.chain().focus().setTextAlign("center").run();
+        break;
+      case "align-right":
+        tiptap.chain().focus().setTextAlign("right").run();
+        break;
+      case "align-justify":
+        tiptap.chain().focus().setTextAlign("justify").run();
+        break;
       case "bullet-list":
         tiptap.chain().focus().toggleBulletList().run();
         break;
@@ -331,6 +338,14 @@ export default function Toolbar() {
         return tiptap.isActive("strike");
       case "underline":
         return tiptap.isActive("underline");
+      case "align-left":
+        return (tiptap.getAttributes("textAlign")?.textAlign || "left") === "left";
+      case "align-center":
+        return (tiptap.getAttributes("textAlign")?.textAlign || "left") === "center";
+      case "align-right":
+        return (tiptap.getAttributes("textAlign")?.textAlign || "left") === "right";
+      case "align-justify":
+        return (tiptap.getAttributes("textAlign")?.textAlign || "left") === "justify";
       case "bullet-list":
         return tiptap.isActive("bulletList");
       case "check-list":
@@ -385,7 +400,7 @@ export default function Toolbar() {
     if (!tiptap) {
       return { label: "左对齐", icon: <AlignLeftOutlined />, key: "left" };
     }
-    const align = tiptap.getAttributes("textAlign")?.textAlign || "left";
+    const align = (tiptap.getAttributes("paragraph")?.textAlign || tiptap.getAttributes("heading")?.textAlign || "left") as string;
     const alignMap: Record<string, { label: string; icon: ReactNode }> = {
       left: { label: "左对齐", icon: <AlignLeftOutlined /> },
       center: { label: "居中", icon: <AlignCenterOutlined /> },
@@ -471,12 +486,7 @@ export default function Toolbar() {
       {
         id: "text-align",
         label: "对齐",
-        content: (
-          <span className="dropdown-icon-text">
-            {getCurrentAlignment().icon}
-            <span className="text-label">{getCurrentAlignment().label}</span>
-          </span>
-        ),
+        content: <span className="dropdown-icon-text">{getCurrentAlignment().icon}</span>,
         type: "dropdown",
       },
     ],
@@ -524,26 +534,74 @@ export default function Toolbar() {
                 }}
               >
                 <Dropdown
+                  overlayClassName={item.id === "text-align" ? "align-dropdown" : undefined}
+                  dropdownRender={
+                    item.id === "text-align"
+                      ? () => {
+                          const current = getCurrentAlignment().key;
+                          return (
+                            <div className="align-menu-panel">
+                              <div className="align-menu-row">
+                                {alignItems.map((alignItem) => {
+                                  const active = alignItem.key === current;
+                                  return (
+                                    <Tooltip key={alignItem.key} title={alignItem.label} placement="bottom">
+                                      <button
+                                        type="button"
+                                        className={active ? "align-menu-btn is-active" : "align-menu-btn"}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          dropdownHandlers["text-align"]?.(alignItem.key);
+                                        }}
+                                      >
+                                        {alignItem.icon}
+                                      </button>
+                                    </Tooltip>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        }
+                      : undefined
+                  }
                   menu={{
                     items:
                       item.id === "text-mode"
-                        ? titleLevelItems.map((item) => ({
-                            ...item,
-                            ...(item.key === getCurrentHeadingKey() ? { icon: <span style={{ color: "#1890ff" }}>✓</span> } : {}),
-                          }))
+                        ? titleLevelItems.map((levelItem) => {
+                            const active = levelItem.key === getCurrentHeadingKey();
+                            return {
+                              key: levelItem.key,
+                              label: (
+                                <div className={active ? "heading-menu-item is-active" : "heading-menu-item"}>
+                                  <div className="heading-menu-left">
+                                    <span className="heading-menu-check">{active ? "✓" : ""}</span>
+                                    <span
+                                      className={
+                                        levelItem.key === "0"
+                                          ? "heading-menu-label is-body"
+                                          : `heading-menu-label is-${levelItem.size}`
+                                      }
+                                    >
+                                      {levelItem.label}
+                                    </span>
+                                  </div>
+                                  <div className="heading-menu-shortcut">{levelItem.shortcut}</div>
+                                </div>
+                              ),
+                            };
+                          })
                         : item.id === "text-align"
                         ? alignItems.map((alignItem) => {
                             const currentAlign = getCurrentAlignment();
                             return {
-                            key: alignItem.key,
-                            label: (
-                              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                {alignItem.icon}
-                                <span>{alignItem.label}</span>
-                                {alignItem.key === currentAlign.key && <span style={{ color: "#1890ff", marginLeft: "auto" }}>✓</span>}
-                              </span>
-                            ),
-                          };
+                              key: alignItem.key,
+                              label: alignItem.icon,
+                              ...(alignItem.key === currentAlign.key
+                                ? { icon: <span style={{ color: "#1890ff" }}>✓</span> }
+                                : {}),
+                            };
                           })
                         : item.id === "ordered-list"
                         ? orderedListTypeItems.map((listItem) => ({
@@ -552,10 +610,18 @@ export default function Toolbar() {
                             ...(listItem.key === getCurrentOrderedListType() ? { icon: <span style={{ color: "#1890ff" }}>✓</span> } : {}),
                           }))
                         : item.id === "font-size"
-                        ? fontSizeItems.map((sizeItem) => ({
-                            ...sizeItem,
-                            ...(sizeItem.key === getCurrentFontSize() ? { icon: <span style={{ color: "#1890ff" }}>✓</span> } : {}),
-                          }))
+                        ? fontSizeItems.map((sizeItem) => {
+                            const active = sizeItem.key === getCurrentFontSize();
+                            return {
+                              key: sizeItem.key,
+                              label: (
+                                <div className="font-size-menu-item">
+                                  <span className="font-size-menu-check">{active ? "✓" : ""}</span>
+                                  <span className="font-size-menu-label">{sizeItem.label}</span>
+                                </div>
+                              ),
+                            };
+                          })
                         : fontSizeItems,
                     onClick: ({ key }: { key: string }) => {
                       // 点击菜单项时立即隐藏 Tooltip
