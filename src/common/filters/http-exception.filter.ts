@@ -14,6 +14,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest();
+    const isProduction = process.env.NODE_ENV === 'production';
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
@@ -43,6 +44,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
       stack: exception instanceof Error ? exception.stack : undefined,
     });
+
+    if (isProduction) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Unauthorized',
+        },
+      };
+      response.status(status).json(errorResponse);
+      return;
+    }
 
     const errorResponse: ErrorResponse = {
       success: false,
