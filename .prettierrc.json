@@ -30,6 +30,12 @@
         "singleQuote": false,
         "printWidth": 120
       }
+    },
+    {
+      "files": ["apps/server/**/*.{ts,tsx,js,mjs,cjs}"],
+      "options": {
+        "singleQuote": true
+      }
     }
   ]
 }

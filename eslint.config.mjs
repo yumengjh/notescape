@@ -18,16 +18,21 @@ const ENTERPRISE_IGNORES = [
   ".output/**",
   ".nitro/**",
   ".cache/**",
+  ".vitepress/**",
   "**/node_modules/**",
   "**/dist/**",
+  "**/dist-bundle/**",
   "**/.nuxt/**",
   "**/.output/**",
   "**/.nitro/**",
   "**/.cache/**",
+  "**/.vitepress/**",
   "**/coverage/**",
   "**/.turbo/**",
   "**/public/build/**",
   "**/performance-test/**",
+  "**/openapi/**",
+  "**/uploads/**",
   "pnpm-lock.yaml",
 ];
 
@@ -94,6 +99,36 @@ export default defineConfig(
 
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-empty-object-type": "off",
+    },
+  },
+
+  // Server (Nest): Node runtime specific overrides
+  {
+    name: "infinitedoc/enterprise/server/node",
+    files: ["apps/server/**/*.{ts,mts,cts,js,mjs,cjs}"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+    },
+    rules: {
+      "@typescript-eslint/consistent-type-imports": "off",
+      "object-shorthand": "off",
+      "prefer-const": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
+    },
+  },
+
+  // Server utility scripts use CommonJS require()
+  {
+    name: "infinitedoc/enterprise/server/scripts-commonjs",
+    files: ["apps/server/scripts/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 

@@ -7,6 +7,7 @@ InfiniteDoc 是一个面向**超大文档场景**的文档系统。
 
 - **@infinitedoc/studio**：文档创作与管理端（React + Vite）
 - **@infinitedoc/publish**：已发布文档展示端（Nuxt）
+- **@infinitedoc/server**：后端 API 服务（NestJS + PostgreSQL）
 
 > 当前仓库已采用 pnpm workspaces 管理，后续会逐步抽离共享模块到 `packages/`。
 
@@ -16,7 +17,8 @@ InfiniteDoc 是一个面向**超大文档场景**的文档系统。
 .
 ├─ apps/
 │  ├─ studio/       # @infinitedoc/studio
-│  └─ publish/      # @infinitedoc/publish（Nuxt 展示端）
+│  ├─ publish/      # @infinitedoc/publish（Nuxt 展示端）
+│  └─ server/       # @infinitedoc/server（Nest API）
 ├─ packages/        # 共享模块预留（types/api/utils 等）
 ├─ docs/
 ├─ package.json
@@ -34,8 +36,9 @@ pnpm dev
 # 分别启动
 pnpm dev:studio
 pnpm dev:publish
+pnpm dev:server
 
-# 同时启动两个子项目
+# 同时启动三个子项目
 pnpm dev:all
 
 # 若你使用 npm，也可直接执行
@@ -55,11 +58,14 @@ pnpm spellcheck
 # 分项目
 pnpm build:studio
 pnpm build:publish
+pnpm build:server
 pnpm lint:studio
 pnpm lint:publish
+pnpm lint:server
 
 pnpm --filter @infinitedoc/studio build
 pnpm --filter @infinitedoc/publish build
+pnpm --filter @infinitedoc/server build
 ```
 
 ## 代码检查（ESLint）

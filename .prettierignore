@@ -14,9 +14,15 @@ apps/*/.nuxt
 apps/*/.output
 apps/*/.nitro
 apps/*/.cache
+apps/*/.vitepress
 .turbo
 .cache
 .cspellcache
+apps/server/dist-bundle
+apps/server/openapi
+apps/server/uploads
+apps/server/docs/website/.vitepress/dist
+apps/server/docs/website/.vitepress/cache
 
 # runtime/log files
 *.log

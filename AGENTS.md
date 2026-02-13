@@ -12,6 +12,7 @@
 - 应用目录：
   - `apps/studio`：主 React 应用（包名 `@infinitedoc/studio`）
   - `apps/publish`：文档站 Nuxt 应用（包名 `@infinitedoc/publish`）
+  - `apps/server`：Nest 后端 API 服务（包名 `@infinitedoc/server`）
 - 根目录命令应优先使用 workspace 脚本（如 `pnpm dev:studio`、`pnpm dev:publish`、`pnpm build`、`pnpm lint`）。
 - 本文档中涉及原 `src/`、`public/`、`vite.config.ts` 等主应用路径时，默认对应 `apps/studio/` 下同名路径。
 
@@ -29,19 +30,20 @@
 - 安装依赖：`pnpm install`。
 - 主应用开发：`pnpm dev:studio`（等价 `pnpm dev`，Vite 默认 5173 端口）。
 - 文档站开发：`pnpm dev:publish`（Nuxt 默认配置，当前脚本端口 4300）。
+- 后端开发：`pnpm dev:server`（Nest watch 模式，默认 5200 端口）。
 - 同时开发：`pnpm dev:all`。
 - 预览主应用：`pnpm preview:studio`（基于 `apps/studio/dist`，端口 3000）。
-- 构建：`pnpm build`（分别构建两个应用）；也可使用 `pnpm build:studio` / `pnpm build:publish`。
+- 构建：`pnpm build`（构建 server/studio/publish）；也可使用 `pnpm build:server` / `pnpm build:studio` / `pnpm build:publish`。
 - 主应用运行前确保环境变量 `VITE_API_BASE_URL` 设置，未设默认 `http://localhost:5200`。
 
 ## Lint 与格式
 
-- Lint 命令：`pnpm lint`（根目录统一执行），可选 `pnpm lint:studio` / `pnpm lint:publish` / `pnpm lint:strict`（零 warning）。
+- Lint 命令：`pnpm lint`（根目录统一执行），可选 `pnpm lint:studio` / `pnpm lint:publish` / `pnpm lint:server` / `pnpm lint:strict`（零 warning）。
 - 格式化命令：`pnpm format`（写入）/ `pnpm format:check`（本地缓存检查）/ `pnpm format:check:ci`（CI 无缓存检查）。
 - 拼写检查命令：`pnpm spellcheck`（本地缓存检查）/ `pnpm spellcheck:ci`（CI 无缓存检查）。
 - 扩展：`@eslint/js` recommended、`typescript-eslint` recommended、`react-hooks` recommended、`react-refresh` vite preset。
 - ESLint 配置统一位于根目录 `eslint.config.mjs`（Flat Config，monorepo 统一规则）。
-- Prettier 配置统一位于根目录（`.prettierrc.json` + `.prettierignore`），子应用不再维护重复配置。
+- Prettier 配置统一位于根目录（`.prettierrc.json` + `.prettierignore`，含 server override），子应用不再维护重复配置。
 - CSpell 配置统一位于根目录（`.cspell.json` + `.cspell/project-words.txt`）。
 - 语法目标：ES2020+，React JSX（`react-jsx`）。
 - 若新增文件，确保符合规则后再提交；尽量零 eslint 警告。
