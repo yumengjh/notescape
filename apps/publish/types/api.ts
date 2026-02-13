@@ -51,9 +51,18 @@ export interface DocumentMeta {
   username?: string;
   status?: string;
   visibility?: string;
+  tags?: string[];
   head?: number;
   publishedHead?: number | null;
   updatedAt?: string;
+  createdAt?: string;
+}
+
+export interface TagMeta {
+  tagId: string;
+  workspaceId: string;
+  name: string;
+  color?: string;
   createdAt?: string;
 }
 

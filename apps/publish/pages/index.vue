@@ -48,7 +48,7 @@
     <NEmpty v-else-if="docs.length === 0" description="当前工作空间暂无已发布文档" />
 
     <div v-else class="grid grid-cols-1 gap-12px md:grid-cols-2">
-      <DocCard v-for="doc in docs" :key="doc.docId" :doc="doc" />
+      <DocCard v-for="doc in docs" :key="doc.docId" :doc="doc" :tag-map="tagMap" />
     </div>
   </section>
 </template>
@@ -58,8 +58,10 @@ import { computed } from "vue";
 import { NAlert, NAvatar, NButton, NCard, NEmpty, NSpin } from "naive-ui";
 import DocCard from "~/components/docs/DocCard.vue";
 import { useDocsApi } from "~/composables/useDocsApi";
+import type { TagMeta } from "~/types/api";
 
-const { listPublishedDocs, workspaceId, getWorkspaceDetail, getUserProfile } = useDocsApi();
+const { listPublishedDocs, workspaceId, getWorkspaceDetail, getUserProfile, listWorkspaceTags } =
+  useDocsApi();
 
 const { data, pending, error, refresh } = await useAsyncData("published-doc-list", async () => {
   return listPublishedDocs({ page: 1, pageSize: 50 });
@@ -104,6 +106,37 @@ const {
 
 const docs = computed(() => data.value?.items || []);
 
+const { data: workspaceTagItems, refresh: refreshWorkspaceTags } = await useAsyncData(
+  () => `workspace-tags-${workspaceId || "missing"}`,
+  async () => {
+    if (!workspaceId) return [] as TagMeta[];
+    try {
+      const response = await listWorkspaceTags({
+        workspaceId,
+        page: 1,
+        pageSize: 100,
+      });
+      return response.items || [];
+    } catch {
+      return [] as TagMeta[];
+    }
+  },
+  {
+    watch: [() => workspaceId],
+    default: () => [] as TagMeta[],
+  },
+);
+
+const tagMap = computed<Record<string, TagMeta>>(() => {
+  const map: Record<string, TagMeta> = {};
+  for (const tag of workspaceTagItems.value || []) {
+    const tagId = typeof tag?.tagId === "string" ? tag.tagId.trim() : "";
+    if (!tagId) continue;
+    map[tagId] = tag;
+  }
+  return map;
+});
+
 const workspaceTitle = computed(() => {
   return workspace.value?.name?.trim() || workspaceId || "未配置工作空间";
 });
@@ -127,7 +160,7 @@ const ownerDisplayName = computed(() => {
 });
 
 const handleRefresh = async () => {
-  await Promise.all([refresh(), refreshWorkspace(), refreshOwnerProfile()]);
+  await Promise.all([refresh(), refreshWorkspace(), refreshOwnerProfile(), refreshWorkspaceTags()]);
 };
 </script>
 

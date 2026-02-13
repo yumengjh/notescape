@@ -7,10 +7,17 @@ import type {
   DocumentMeta,
   PaginatedResult,
   PreferenceSettings,
+  TagMeta,
   WorkspaceMeta,
 } from "~/types/api";
 
 type ListPublishedDocsParams = {
+  page?: number;
+  pageSize?: number;
+};
+
+type ListWorkspaceTagsParams = {
+  workspaceId?: string;
   page?: number;
   pageSize?: number;
 };
@@ -45,6 +52,13 @@ const unwrapEnvelope = <T>(envelope: ApiEnvelope<T>): T => {
 const clamp = (value: unknown, min: number, max: number, fallback: number) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.max(min, Math.min(max, Math.round(value)));
+};
+
+const toPositiveInteger = (value: unknown, fallback: number) => {
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized)) return fallback;
+  const rounded = Math.round(normalized);
+  return rounded > 0 ? rounded : fallback;
 };
 
 const extractSettings = (payload: unknown): DeepPartial<PreferenceSettings> | null => {
@@ -153,6 +167,20 @@ export const useDocsApi = () => {
     return unwrapEnvelope(envelope);
   };
 
+  const listWorkspaceTags = async (params: ListWorkspaceTagsParams = {}) => {
+    const currentWorkspaceId = params.workspaceId || ensureWorkspaceId();
+    const page = toPositiveInteger(params.page, 1);
+    const pageSize = Math.min(100, toPositiveInteger(params.pageSize, 100));
+    const envelope = await $fetch<ApiEnvelope<PaginatedResult<TagMeta>>>("/api/v1/tags", {
+      query: {
+        workspaceId: currentWorkspaceId,
+        page,
+        pageSize,
+      },
+    });
+    return unwrapEnvelope(envelope);
+  };
+
   const getWorkspaceDetail = async (workspaceIdOverride?: string) => {
     const currentWorkspaceId = workspaceIdOverride || ensureWorkspaceId();
     const envelope = await $fetch<ApiEnvelope<WorkspaceMeta>>(
@@ -196,6 +224,7 @@ export const useDocsApi = () => {
   return {
     workspaceId,
     listPublishedDocs,
+    listWorkspaceTags,
     getWorkspaceDetail,
     getDocument,
     getDocumentContent,

@@ -31,9 +31,21 @@
             <span class="doc-page-title-icon">{{ pageData.meta.icon || "📄" }}</span>
             <span>{{ pageData.meta.title || "未命名文档" }}</span>
           </h1>
-          <div class="doc-page-submeta">
-            <span class="doc-page-submeta-item">作者：{{ authorText }}</span>
-            <span class="doc-page-submeta-item">时间：{{ displayTimeText }}</span>
+          <div class="doc-page-meta-row">
+            <div class="doc-page-submeta">
+              <span class="doc-page-submeta-item">作者：{{ authorText }}</span>
+              <span class="doc-page-submeta-item">时间：{{ displayTimeText }}</span>
+            </div>
+            <div v-if="displayTags.length > 0" class="doc-page-tags">
+              <span
+                v-for="tag in displayTags"
+                :key="tag.tagId"
+                class="doc-page-tag"
+                :style="tag.style"
+              >
+                {{ tag.label }}
+              </span>
+            </div>
           </div>
         </template>
       </header>
@@ -53,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed, reactive } from "vue";
+import type { CSSProperties } from "vue";
 import { createError } from "h3";
 import { NAlert, NSpin } from "naive-ui";
 import DocVirtualReader from "~/components/docs/DocVirtualReader.vue";
@@ -63,7 +76,7 @@ import {
   resolvePagination,
   toRenderBlocks,
 } from "~/composables/useDocsTransform";
-import type { PublishedDocPageData } from "~/types/api";
+import type { PublishedDocPageData, TagMeta } from "~/types/api";
 
 type ReaderStats = {
   totalBlocks: number;
@@ -76,7 +89,7 @@ type ReaderStats = {
 const route = useRoute();
 const runtimeConfig = useRuntimeConfig();
 const docId = computed(() => String(route.params.docId || "").trim());
-const { getDocument, getDocumentContent, getUserProfile } = useDocsApi();
+const { getDocument, getDocumentContent, getUserProfile, listWorkspaceTags } = useDocsApi();
 
 const toBoolean = (value: unknown): boolean => {
   if (typeof value === "boolean") return value;
@@ -191,6 +204,93 @@ const syncReaderStatsFromInitialState = (data?: PublishedDocPageData | null) => 
 
 syncReaderStatsFromInitialState(pageData.value);
 
+const tagWorkspaceId = computed(() => {
+  const fromDoc = pageData.value?.meta?.workspaceId;
+  if (typeof fromDoc === "string" && fromDoc.trim()) return fromDoc.trim();
+  const fromRuntime = runtimeConfig.public.workspaceId;
+  return typeof fromRuntime === "string" ? fromRuntime.trim() : "";
+});
+
+const { data: workspaceTagItems } = await useAsyncData(
+  () => `doc-page-tags-${tagWorkspaceId.value || "missing"}`,
+  async () => {
+    if (!tagWorkspaceId.value) return [] as TagMeta[];
+    try {
+      const response = await listWorkspaceTags({
+        workspaceId: tagWorkspaceId.value,
+        page: 1,
+        pageSize: 100,
+      });
+      return response.items || [];
+    } catch {
+      return [] as TagMeta[];
+    }
+  },
+  {
+    watch: [tagWorkspaceId],
+    default: () => [] as TagMeta[],
+  },
+);
+
+const tagMap = computed<Record<string, TagMeta>>(() => {
+  const map: Record<string, TagMeta> = {};
+  for (const tag of workspaceTagItems.value || []) {
+    const tagId = typeof tag?.tagId === "string" ? tag.tagId.trim() : "";
+    if (!tagId) continue;
+    map[tagId] = tag;
+  }
+  return map;
+});
+
+const normalizeTagColor = (value?: string) => {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim();
+  if (!normalized) return "";
+  return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(normalized) ? normalized : "";
+};
+
+const displayTags = computed(() => {
+  const metaTags = pageData.value?.meta?.tags;
+  if (!Array.isArray(metaTags))
+    return [] as Array<{
+      tagId: string;
+      label: string;
+      style?: CSSProperties;
+    }>;
+
+  const unique = new Set<string>();
+  const result: Array<{
+    tagId: string;
+    label: string;
+    style?: CSSProperties;
+  }> = [];
+
+  for (const rawTagId of metaTags) {
+    if (typeof rawTagId !== "string") continue;
+    const tagId = rawTagId.trim();
+    if (!tagId || unique.has(tagId)) continue;
+    unique.add(tagId);
+
+    const tagMeta = tagMap.value[tagId];
+    const label =
+      typeof tagMeta?.name === "string" && tagMeta.name.trim() ? tagMeta.name.trim() : tagId;
+    const color = normalizeTagColor(tagMeta?.color);
+
+    result.push({
+      tagId,
+      label,
+      style: color
+        ? {
+            borderColor: color,
+            color,
+          }
+        : undefined,
+    });
+  }
+
+  return result;
+});
+
 const totalBlocks = computed(() => Math.max(readerStats.totalBlocks, readerStats.loadedBlocks, 0));
 const loadedBlocks = computed(() => readerStats.loadedBlocks);
 const remainingBlocks = computed(() => Math.max(totalBlocks.value - loadedBlocks.value, 0));
@@ -270,7 +370,7 @@ const formatTime = (value?: string) => {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-bottom: 16px;
+  margin: 16px 0;
   padding: 0 20px;
 }
 
@@ -319,7 +419,8 @@ const formatTime = (value?: string) => {
 }
 
 .doc-page-submeta {
-  display: flex;
+  display: inline-flex;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 14px;
@@ -330,6 +431,36 @@ const formatTime = (value?: string) => {
 
 .doc-page-submeta-item {
   white-space: nowrap;
+}
+
+.doc-page-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.doc-page-tags {
+  display: inline-flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-page-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid #dbe3f5;
+  background: #f8faff;
+  color: #4f5f80;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .doc-page-meta-sticky {
@@ -407,6 +538,14 @@ const formatTime = (value?: string) => {
   .doc-page-submeta {
     font-size: 12px;
     gap: 4px 10px;
+  }
+
+  .doc-page-tags {
+    gap: 6px;
+  }
+
+  .doc-page-tag {
+    font-size: 11px;
   }
 }
 </style>
