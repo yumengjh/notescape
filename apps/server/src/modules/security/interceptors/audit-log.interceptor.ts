@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AUDIT_LOG_KEY, AuditLogOptions } from '../../../common/decorators/audit-log.decorator';
 import { AuditService } from '../audit.service';
+import {
+  type SecureEnvelopeDto,
+  type SecureRequestContext,
+} from '../types/secure-request-context.type';
+import { decryptSecureEnvelope } from '../utils/secure-payload.util';
 
 const SENSITIVE_KEYS = ['password', 'token', 'refreshToken', 'secret', 'passwordHash'];
 
@@ -70,14 +75,15 @@ export class AuditLogInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap({
         next: async (data: unknown) => {
-          const resourceId = getResourceId(opts, data, params, body);
+          const afterData = this.resolveAfterData(request, data);
+          const resourceId = getResourceId(opts, afterData, params, body);
           await this.auditService.record({
             userId: user?.userId,
             username: user?.username,
             action: opts.action,
             resourceType: opts.resourceType,
             resourceId,
-            changes: { before: sanitize(body), after: sanitize(data) },
+            changes: { before: sanitize(body), after: sanitize(afterData) },
             metadata: { method: request.method, url: request.url },
             ipAddress: ip || request.socket?.remoteAddress,
             userAgent,
@@ -101,6 +107,32 @@ export class AuditLogInterceptor implements NestInterceptor {
           });
         },
       }),
+    );
+  }
+
+  private resolveAfterData(
+    request: { secureContext?: SecureRequestContext },
+    data: unknown,
+  ): unknown {
+    const secureContext = request.secureContext;
+    if (!secureContext || !this.isSecureEnvelope(data)) {
+      return data;
+    }
+
+    try {
+      return decryptSecureEnvelope(secureContext, data);
+    } catch {
+      return data;
+    }
+  }
+
+  private isSecureEnvelope(value: unknown): value is SecureEnvelopeDto {
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      'v' in value &&
+      'iv' in value &&
+      'ciphertext' in value
     );
   }
 }

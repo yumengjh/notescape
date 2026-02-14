@@ -5,6 +5,7 @@
 ## 目录
 
 - [运行时配置中心设计](./runtime-config-center)
+- [安全通道（动态密钥 + 应用层加密）设计](./secure-channel-transport)
 - [数据结构设计](./data-structure-design)
 - [文档块工作机制](./block-mechanism)
 - [块移动操作指南](./block-movement-guide)

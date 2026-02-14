@@ -64,6 +64,13 @@ export function generateSessionId(): string {
 }
 
 /**
+ * 生成安全通道 ID (sch_xxx)
+ */
+export function generateSecureChannelId(): string {
+  return `sch_${Date.now()}_${uuidv4().split('-')[0]}`;
+}
+
+/**
  * 生成版本ID (blockId@ver)
  */
 export function generateVersionId(blockId: string, ver: number): string {

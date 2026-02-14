@@ -40,6 +40,8 @@ import { AuditLog } from './entities/audit-log.entity';
 import { SecurityLog } from './entities/security-log.entity';
 import { SettingsProfile } from './entities/settings-profile.entity';
 import { RuntimeConfig } from './entities/runtime-config.entity';
+import { SecureChannel } from './entities/secure-channel.entity';
+import { SecureReplayGuard } from './entities/secure-replay-guard.entity';
 
 @Module({
   imports: [
@@ -75,6 +77,8 @@ import { RuntimeConfig } from './entities/runtime-config.entity';
           SecurityLog,
           SettingsProfile,
           RuntimeConfig,
+          SecureChannel,
+          SecureReplayGuard,
         ],
         synchronize: configService.get<string>('app.env') === 'development',
         logging: configService.get<string>('app.env') === 'development',

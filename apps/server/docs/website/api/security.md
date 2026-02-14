@@ -2,12 +2,55 @@
 
 安全模块提供安全日志和审计日志查询功能。
 
+> 安全通道（动态密钥 + 应用层加密）详细设计、握手流程与运维指南，请参考：
+> [《安全通道（动态密钥 + 应用层加密）设计与使用指南》](/design/secure-channel-transport)。
+
 ## 接口列表
 
-| 方法 | 路径               | 说明         | 认证 |
-| ---- | ------------------ | ------------ | ---- |
-| GET  | `/security/events` | 安全日志列表 | 是   |
-| GET  | `/security/audit`  | 审计日志列表 | 是   |
+| 方法 | 路径                     | 说明           | 认证 |
+| ---- | ------------------------ | -------------- | ---- |
+| POST | `/security/channel/init` | 初始化安全通道 | 是   |
+| GET  | `/security/events`       | 安全日志列表   | 是   |
+| GET  | `/security/audit`        | 审计日志列表   | 是   |
+
+## 初始化安全通道
+
+**接口：** `POST /api/v1/security/channel/init`
+
+**说明：** 建立动态密钥通道，后续业务请求可使用 `x-sec-*` 头和密文封包。
+
+**请求头：**
+
+```
+Authorization: Bearer <your-access-token>
+Content-Type: application/json
+```
+
+**请求示例：**
+
+```json
+{
+  "clientPublicKey": "base64(spki)",
+  "clientRandom": "base64(16B)",
+  "deviceId": "web-uuid"
+}
+```
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "channelId": "sch_1762345678901_abc123",
+    "serverPublicKey": "base64(spki)",
+    "serverRandom": "base64(16B)",
+    "expiresAt": "2026-02-14T09:00:00.000Z",
+    "serverTime": 1762345678901,
+    "cipherSuite": "ECDH_P256+HKDF_SHA256+AES_256_GCM+HMAC_SHA256"
+  }
+}
+```
 
 ## 获取安全日志
 

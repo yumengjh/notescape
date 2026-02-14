@@ -4,13 +4,14 @@ import databaseConfig from './database.config';
 import jwtConfig from './jwt.config';
 import appConfig from './app.config';
 import runtimeConfig from './runtime.config';
+import secureConfig from './secure.config';
 
 @Module({
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [databaseConfig, jwtConfig, appConfig, runtimeConfig],
+      load: [databaseConfig, jwtConfig, appConfig, runtimeConfig, secureConfig],
     }),
   ],
 })

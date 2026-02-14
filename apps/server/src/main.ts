@@ -39,7 +39,19 @@ async function bootstrap() {
     origin: configService.get<string>('app.corsOrigin') || 'http://localhost:3000',
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-sec-enabled',
+      'x-sec-channel-id',
+      'x-sec-req-id',
+      'x-sec-nonce',
+      'x-sec-ts',
+      'x-sec-sig',
+      'x-sec-kv',
+      'x-system-admin-token',
+      'x-operator-id',
+    ],
   });
 
   // 全局管道

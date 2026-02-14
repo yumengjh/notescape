@@ -1,15 +1,16 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
+import type { Request, Response } from 'express';
 import { QueryFailedError } from 'typeorm';
 import { ErrorResponse } from '../dto/response.dto';
 import { ErrorCode } from '../errors/error-codes';
+import { encryptSecureEnvelope } from '../../modules/security/utils/secure-payload.util';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<Request>();
     const isProd = process.env.NODE_ENV === 'production';
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -84,6 +85,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }),
       },
     };
+
+    const secureContext = request.secureContext;
+    if (secureContext) {
+      try {
+        const encryptedResponse = encryptSecureEnvelope(secureContext, errorResponse);
+        response.status(status).json(encryptedResponse);
+        return;
+      } catch (secureError) {
+        console.error('安全错误响应加密失败，将回退明文错误响应', {
+          secureError: secureError instanceof Error ? secureError.message : String(secureError),
+          path: request.url,
+        });
+      }
+    }
 
     response.status(status).json(errorResponse);
   }

@@ -83,6 +83,7 @@ export default defineConfig({
           text: "设计文档",
           items: [
             { text: "运行时配置中心设计", link: "/design/runtime-config-center" },
+            { text: "安全通道设计", link: "/design/secure-channel-transport" },
             { text: "数据结构设计", link: "/design/data-structure-design" },
             { text: "文档块工作机制", link: "/design/block-mechanism" },
             { text: "块移动操作指南", link: "/design/block-movement-guide" },
