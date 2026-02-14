@@ -57,6 +57,22 @@ export default {
       { value: "types", name: "🧩 类型: 类型定义调整", emoji: "🧩" },
       { value: "release", name: "🏷️ 发布: 版本发布相关", emoji: "🏷️" },
     ],
+    //   打开“前缀选择菜单”
+    issuePrefixes: [
+      { value: "Closes", name: "Closes: 合并到默认分支后自动关闭 Issue（如 #123）" },
+      { value: "Refs", name: "Refs: 仅关联 Issue/PR（不自动关闭）" },
+
+      { value: "Docs", name: "Docs: 相关文档/资料链接（设计/PRD/ADR/迁移指南）" },
+      { value: "Video", name: "Video: 相关视频/录屏/会议回放链接" },
+
+      {
+        value: "Co-authored-by",
+        name: "Co-authored-by: 标记共同作者（GitHub 会在提交/PR里展示协作者；格式 Name <email>）",
+      },
+    ],
+    // 是否允许自定义前缀/跳过前缀
+    allowCustomIssuePrefix: true,
+    allowEmptyIssuePrefix: true,
 
     // monorepo 常用 scope（保留你的原有项 + 加了 studio/publish/docs/ci）
     scopes: [
@@ -74,14 +90,18 @@ export default {
     allowCustomScopes: true,
 
     // 保持“精简提交流程”：不强制写 body/footer/breaking
-    skipQuestions: ["body", "footerPrefix", "footer", "breaking"],
+    skipQuestions: [],
 
     messages: {
       type: "📌 请选择提交类型:",
       scope: "🎯 请选择影响范围 (可选):",
       subject: "📝 请简要描述更改:",
       body: "🔍 详细描述 (可选):",
-      footer: "🔗 关联的 ISSUE 或 BREAKING CHANGE (可选):",
+      footerPrefix: "🏷️ 请选择 footer 前缀 (如: Refs / Closes / Co-authored-by / Docs):",
+      footerPrefixesSelect: "🏷️ 选择 footer 前缀（可选）:",
+      customFooterPrefix: "✍️ 输入自定义 footer 前缀:",
+      footer: "🔗 填写 footer 内容 (可选，可多行；用于关联 Issue/资料链接/协作者等):",
+      breaking: "💥 是否包含破坏性变更 (BREAKING CHANGE)? (如有请描述影响与迁移方式):",
       confirmCommit: "✅ 确认提交?",
     },
   },
