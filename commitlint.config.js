@@ -63,7 +63,7 @@ export default {
       "root",
       "studio",
       "publish",
-      "backend",
+      "server",
       "frontend",
       "components",
       "utils",
